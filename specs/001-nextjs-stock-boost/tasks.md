@@ -106,15 +106,15 @@ Next.js App Router structure at repository root with components following atomic
 
 ### Implementation for User Story 2
 
-- [ ] T032 [P] [US2] Create Modal component in components/ui/Modal.tsx
-- [ ] T033 [P] [US2] Create Tabs component in components/ui/Tabs.tsx
-- [ ] T034 [P] [US2] Create AddBoostForm component in components/forms/AddBoostForm.tsx
-- [ ] T035 [US2] Create ActiveBoostsTable component in components/tables/ActiveBoostsTable.tsx
-- [ ] T036 [US2] Connect to external boost CRUD API endpoints via lib/api/client.ts
-- [ ] T037 [P] [US2] Connect to external SKU search API endpoint via lib/api/client.ts
-- [ ] T038 [US2] Update dashboard page to include tabbed interface in app/dashboard/page.tsx
-- [ ] T039 [US2] Create React Query hooks for boost operations in lib/hooks/use-boosts.ts
-- [ ] T040 [P] [US2] Connect to external boost deactivation API endpoint via lib/api/client.ts
+- [x] T032 [P] [US2] Create Modal component in components/ui/Modal.tsx
+- [x] T033 [P] [US2] Create Tabs component in components/ui/Tabs.tsx
+- [x] T034 [P] [US2] Create AddBoostForm component in components/forms/AddBoostForm.tsx
+- [x] T035 [US2] Create ActiveBoostsTable component in components/tables/ActiveBoostsTable.tsx
+- [x] T036 [US2] Connect to external boost CRUD API endpoints via lib/api/client.ts
+- [x] T037 [P] [US2] Connect to external SKU search API endpoint via lib/api/client.ts
+- [x] T038 [US2] Update dashboard page to include tabbed interface in app/dashboard/page.tsx
+- [x] T039 [US2] Create React Query hooks for boost operations in lib/hooks/use-boosts.ts
+- [x] T040 [P] [US2] Connect to external boost deactivation API endpoint via lib/api/client.ts
 
 **Checkpoint**: At this point, User Stories 1 AND 2 should both work independently - complete active boost management functionality
 
@@ -128,10 +128,10 @@ Next.js App Router structure at repository root with components following atomic
 
 ### Implementation for User Story 3
 
-- [ ] T041 [P] [US3] Create HistoricalBoostsTable component in components/tables/HistoricalBoostsTable.tsx
-- [ ] T042 [US3] Connect to external API for historical boost queries with pagination via lib/api/client.ts
-- [ ] T043 [US3] Update dashboard page to include historical boosts tab in app/dashboard/page.tsx
-- [ ] T044 [US3] Create React Query hooks for historical boost operations in lib/hooks/use-boosts.ts
+- [x] T041 [P] [US3] Create HistoricalBoostsTable component in components/tables/HistoricalBoostsTable.tsx
+- [x] T042 [US3] Connect to external API for historical boost queries with pagination via lib/api/client.ts
+- [x] T043 [US3] Update dashboard page to include historical boosts tab in app/dashboard/page.tsx
+- [x] T044 [US3] Create React Query hooks for historical boost operations in lib/hooks/use-boosts.ts
 
 **Checkpoint**: All user stories should now be independently functional with complete boost management capabilities
 
@@ -141,12 +141,12 @@ Next.js App Router structure at repository root with components following atomic
 
 **Purpose**: Improvements that affect multiple user stories
 
-- [ ] T045 [P] Add loading states and error boundaries across all components
-- [ ] T046 [P] Implement optimistic updates for better user experience
-- [ ] T047 [P] Add proper TypeScript strict mode configuration
-- [ ] T048 [P] Configure Next.js production optimizations
-- [ ] T049 [P] Add comprehensive error handling and user feedback
-- [ ] T050 Run quickstart.md validation and fix any issues
+- [x] T045 [P] Add loading states and error boundaries across all components
+- [x] T046 [P] Implement optimistic updates for better user experience
+- [x] T047 [P] Add proper TypeScript strict mode configuration
+- [x] T048 [P] Configure Next.js production optimizations
+- [x] T049 [P] Add comprehensive error handling and user feedback
+- [x] T050 Run quickstart.md validation and fix any issues
 
 ---
 

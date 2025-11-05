@@ -4,6 +4,7 @@ import { useState } from 'react'
 import Tabs from '@/components/ui/Tabs'
 import Modal from '@/components/ui/Modal'
 import ActiveBoostsTable from '@/components/tables/ActiveBoostsTable'
+import HistoricalBoostsTable from '@/components/tables/HistoricalBoostsTable'
 import AddBoostForm from '@/components/forms/AddBoostForm'
 import { Button } from '@/components/ui/Button'
 
@@ -51,9 +52,7 @@ export default function DashboardPage() {
               View previously deactivated stock boosts
             </p>
           </div>
-          <div className="text-center py-8 text-gray-500">
-            Historical boosts functionality coming in User Story 3
-          </div>
+          <HistoricalBoostsTable />
         </div>
       )
     }
