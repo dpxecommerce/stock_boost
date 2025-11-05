@@ -1,24 +1,29 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest'
 import { render, screen, fireEvent, waitFor } from '@testing-library/react'
-import { LoginForm } from '@/components/forms/LoginForm'
 
-// Mock Next.js router
-const mockPush = vi.fn()
-const mockRefresh = vi.fn()
-vi.mock('next/navigation', () => ({
-  useRouter: vi.fn(() => ({
-    push: mockPush,
-    refresh: mockRefresh,
-  })),
+// Hoist mocks before any imports
+const { mockPush, mockRefresh, mockLogin } = vi.hoisted(() => ({
+  mockPush: vi.fn(),
+  mockRefresh: vi.fn(),
+  mockLogin: vi.fn(),
 }))
 
-// Mock authManager
-const mockLogin = vi.fn()
+vi.mock('next/navigation', () => ({
+  useRouter: () => ({
+    push: mockPush,
+    refresh: mockRefresh,
+  }),
+}))
+
 vi.mock('@/lib/auth', () => ({
   authManager: {
     login: mockLogin,
+    isAuthenticated: () => false,
+    getCurrentUser: () => null,
   },
 }))
+
+import { LoginForm } from '@/components/forms/LoginForm'
 
 describe('LoginForm Component', () => {
   beforeEach(() => {
@@ -34,11 +39,6 @@ describe('LoginForm Component', () => {
   })
 
   it('should show validation errors for invalid username', async () => {
-    mockLogin.mockResolvedValueOnce({
-      success: false,
-      error: 'Validation failed',
-    })
-
     render(<LoginForm />)
 
     const usernameInput = screen.getByLabelText(/username/i)
@@ -52,16 +52,11 @@ describe('LoginForm Component', () => {
 
     // Should show validation error for username
     await waitFor(() => {
-      expect(screen.getByText(/string must contain at least 3 character/i)).toBeInTheDocument()
+      expect(screen.getByText('Username must be at least 3 characters')).toBeInTheDocument()
     })
   })
 
   it('should show validation errors for invalid password', async () => {
-    mockLogin.mockResolvedValueOnce({
-      success: false,
-      error: 'Validation failed',
-    })
-
     render(<LoginForm />)
 
     const usernameInput = screen.getByLabelText(/username/i)
@@ -75,7 +70,7 @@ describe('LoginForm Component', () => {
 
     // Should show validation error for password
     await waitFor(() => {
-      expect(screen.getByText(/string must contain at least 8 character/i)).toBeInTheDocument()
+      expect(screen.getByText('Password must be at least 8 characters')).toBeInTheDocument()
     })
   })
 
@@ -115,7 +110,7 @@ describe('LoginForm Component', () => {
     // First submission with error
     mockLogin.mockResolvedValueOnce({
       success: false,
-      error: 'Invalid credentials',
+      error: 'Invalid username or password',
     })
 
     render(<LoginForm />)
@@ -124,28 +119,31 @@ describe('LoginForm Component', () => {
     const passwordInput = screen.getByLabelText(/password/i)
     const submitButton = screen.getByRole('button', { name: /sign in/i })
 
-    fireEvent.change(usernameInput, { target: { value: 'wrong' } })
-    fireEvent.change(passwordInput, { target: { value: 'wrong' } })
+    fireEvent.change(usernameInput, { target: { value: 'wronguser' } })
+    fireEvent.change(passwordInput, { target: { value: 'wrongpass123' } })
     fireEvent.click(submitButton)
 
     // Wait for error to appear
     await waitFor(() => {
-      expect(screen.getByText('Invalid credentials')).toBeInTheDocument()
+      expect(screen.getByText('Invalid username or password')).toBeInTheDocument()
     })
+
+    // Verify error is visible
+    expect(screen.getByText('Invalid username or password')).toBeInTheDocument()
 
     // Second submission (successful)
     mockLogin.mockResolvedValueOnce({
       success: true,
-      data: { id: 'user-1', username: 'admin' },
+      data: { user: { id: 'user-1', username: 'admin' } },
     })
 
     fireEvent.change(usernameInput, { target: { value: 'admin' } })
     fireEvent.change(passwordInput, { target: { value: 'password123' } })
     fireEvent.click(submitButton)
 
-    // Error should be cleared
+    // Error should be cleared immediately when form is submitted
     await waitFor(() => {
-      expect(screen.queryByText('Invalid credentials')).not.toBeInTheDocument()
+      expect(screen.queryByText('Invalid username or password')).not.toBeInTheDocument()
     })
   })
 

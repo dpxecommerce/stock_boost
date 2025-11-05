@@ -74,8 +74,8 @@ Next.js App Router structure at repository root with components following atomic
 
 > **NOTE: Write these tests FIRST, ensure they FAIL before implementation**
 
-- [ ] T019 [P] [US1] Integration test for login flow in tests/integration/auth-flow.test.ts
-- [ ] T020 [P] [US1] Component test for LoginForm validation in tests/components/LoginForm.test.tsx
+- [x] T019 [P] [US1] Integration test for login flow in tests/integration/auth-flow.test.ts
+- [x] T020 [P] [US1] Component test for LoginForm validation in tests/components/LoginForm.test.tsx
 
 ### Implementation for User Story 1
 
@@ -101,8 +101,8 @@ Next.js App Router structure at repository root with components following atomic
 
 ### Tests for User Story 2 (Component testing for critical form validation) ⚠️
 
-- [ ] T030 [P] [US2] Integration test for boost management in tests/integration/boost-management.test.ts
-- [ ] T031 [P] [US2] Component test for AddBoostForm validation in tests/components/AddBoostForm.test.tsx
+- [x] T030 [P] [US2] Integration test for boost management in tests/integration/boost-management.test.ts
+- [x] T031 [P] [US2] Component test for AddBoostForm validation in tests/components/AddBoostForm.test.tsx
 
 ### Implementation for User Story 2
 

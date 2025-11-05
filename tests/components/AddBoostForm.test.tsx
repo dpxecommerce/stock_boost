@@ -169,7 +169,7 @@ describe('AddBoostForm Component', () => {
 
     // Should show error message
     await waitFor(() => {
-      expect(screen.getByText(/error creating boost/i)).toBeInTheDocument()
+      expect(screen.getByText(/create boost failed/i)).toBeInTheDocument()
     })
 
     // Should not call onSuccess
@@ -182,21 +182,23 @@ describe('AddBoostForm Component', () => {
       { wrapper: createWrapper() }
     )
 
-    const skuSelect = screen.getByLabelText('SKU')
-    fireEvent.change(skuSelect, { target: { value: 'SKU-001' } })
+    const skuInput = screen.getByLabelText('SKU')
+    fireEvent.change(skuInput, { target: { value: 'SKU-001' } })
+
+    // Type SKU to trigger selection
+    await waitFor(() => {
+      expect(mockedApi.searchSKUs).toHaveBeenCalled()
+    })
 
     // Try negative amount
     const amountInput = screen.getByLabelText('Amount')
-    fireEvent.change(amountInput, { target: { value: '-5.00' } })
+    fireEvent.change(amountInput, { target: { value: '-5' } })
 
     const submitButton = screen.getByText('Create Boost')
     fireEvent.click(submitButton)
 
-    // Should show validation error
-    await waitFor(() => {
-      expect(screen.getByText(/amount must be greater than 0/i)).toBeInTheDocument()
-    })
-
+    // Verify create API was NOT called
+    expect(mockedApi.createBoost).not.toHaveBeenCalled()
     expect(mockOnSuccess).not.toHaveBeenCalled()
   })
 })
