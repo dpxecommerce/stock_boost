@@ -111,7 +111,7 @@ export default function AddBoostForm({
   }
 
   const handleAmountChange = (value: string) => {
-    const amount = parseFloat(value) || 0
+    const amount = parseInt(value) || 0
     setFormData(prev => ({ ...prev, amount }))
     
     // Clear amount error when user starts typing
@@ -179,9 +179,9 @@ export default function AddBoostForm({
           type="number"
           value={formData.amount || ''}
           onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleAmountChange(e.target.value)}
-          placeholder="0.00"
-          step="0.01"
-          min="0"
+          placeholder="0"
+          step="1"
+          min="1"
           error={errors.amount}
           disabled={isLoading}
         />

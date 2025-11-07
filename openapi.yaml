@@ -1,0 +1,725 @@
+openapi: 3.0.3
+info:
+  title: Stock Boost Management API
+  description: |
+    API for managing stock boosts in an e-commerce system. This API handles authentication, 
+    stock boost CRUD operations, SKU search, and historical boost tracking.
+  version: 1.0.0
+  contact:
+    name: API Support
+servers:
+  - url: https://api.example.com/v1
+    description: Production server
+  - url: https://staging-api.example.com/v1
+    description: Staging server
+  - url: http://localhost:3001/v1
+    description: Local development server
+
+tags:
+  - name: Authentication
+    description: User authentication and session management
+  - name: Boosts
+    description: Stock boost management operations
+  - name: SKUs
+    description: SKU search and lookup operations
+
+security:
+  - bearerAuth: []
+
+paths:
+  /auth/login:
+    post:
+      tags:
+        - Authentication
+      summary: User login
+      description: Authenticate user and receive JWT token
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - username
+                - password
+              properties:
+                username:
+                  type: string
+                  minLength: 3
+                  maxLength: 50
+                  pattern: '^[A-Za-z0-9_]+$'
+                  example: admin
+                  description: Username (letters, numbers, underscores only)
+                password:
+                  type: string
+                  minLength: 8
+                  maxLength: 100
+                  format: password
+                  example: admin123
+                  description: User password
+      responses:
+        '200':
+          description: Login successful
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: object
+                    properties:
+                      token:
+                        type: string
+                        example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+                        description: JWT authentication token
+                      user:
+                        $ref: '#/components/schemas/User'
+        '401':
+          description: Invalid credentials
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                success: false
+                error: Invalid username or password
+        '400':
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /auth/logout:
+    post:
+      tags:
+        - Authentication
+      summary: User logout
+      description: Invalidate current session token
+      responses:
+        '200':
+          description: Logout successful
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /auth/refresh:
+    post:
+      tags:
+        - Authentication
+      summary: Refresh authentication token
+      description: Get a new JWT token using the current valid token
+      responses:
+        '200':
+          description: Token refreshed successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: object
+                    properties:
+                      token:
+                        type: string
+                        example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /auth/me:
+    get:
+      tags:
+        - Authentication
+      summary: Get current user
+      description: Retrieve authenticated user information
+      responses:
+        '200':
+          description: User information retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    $ref: '#/components/schemas/User'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /boosts:
+    get:
+      tags:
+        - Boosts
+      summary: List stock boosts
+      description: Retrieve paginated list of stock boosts with optional filtering
+      parameters:
+        - name: page
+          in: query
+          description: Page number (1-indexed)
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+            example: 1
+        - name: limit
+          in: query
+          description: Number of items per page
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+            example: 20
+        - name: status
+          in: query
+          description: Filter by boost status
+          schema:
+            type: string
+            enum: [active, completed, expired]
+            example: active
+      responses:
+        '200':
+          description: List of boosts retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: object
+                    properties:
+                      boosts:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/Boost'
+                      pagination:
+                        $ref: '#/components/schemas/Pagination'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+    post:
+      tags:
+        - Boosts
+      summary: Create stock boost
+      description: Create a new stock boost for a specific SKU
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - sku
+                - amount
+              properties:
+                sku:
+                  type: string
+                  minLength: 3
+                  maxLength: 50
+                  pattern: '^[A-Za-z0-9_-]+$'
+                  example: TSHIRT-BLK-M
+                  description: SKU identifier
+                amount:
+                  type: number
+                  format: double
+                  minimum: 0.01
+                  maximum: 999999.99
+                  example: 50
+                  description: Stock boost amount (max 2 decimal places)
+      responses:
+        '201':
+          description: Boost created successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    $ref: '#/components/schemas/Boost'
+        '400':
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                success: false
+                error: Amount must be positive
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /boosts/{id}:
+    get:
+      tags:
+        - Boosts
+      summary: Get boost by ID
+      description: Retrieve a specific stock boost by its ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Boost ID
+          schema:
+            type: string
+            example: boost-1
+      responses:
+        '200':
+          description: Boost retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    $ref: '#/components/schemas/Boost'
+        '404':
+          description: Boost not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                success: false
+                error: Boost not found
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+    delete:
+      tags:
+        - Boosts
+      summary: Delete boost
+      description: Permanently delete a stock boost (admin only)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Boost ID
+          schema:
+            type: string
+            example: boost-1
+      responses:
+        '200':
+          description: Boost deleted successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+        '404':
+          description: Boost not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+
+  /boosts/{id}/deactivate:
+    post:
+      tags:
+        - Boosts
+      summary: Deactivate boost
+      description: Deactivate an active stock boost with a reason
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Boost ID
+          schema:
+            type: string
+            example: boost-1
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - reason
+              properties:
+                reason:
+                  type: string
+                  enum: [manual, expired, error]
+                  example: manual
+                  description: Reason for deactivation
+      responses:
+        '200':
+          description: Boost deactivated successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    $ref: '#/components/schemas/Boost'
+        '400':
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                success: false
+                error: Boost is already deactivated
+        '404':
+          description: Boost not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /boosts/active:
+    get:
+      tags:
+        - Boosts
+      summary: List active boosts
+      description: Retrieve all currently active stock boosts
+      parameters:
+        - name: page
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+      responses:
+        '200':
+          description: Active boosts retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: object
+                    properties:
+                      boosts:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/Boost'
+                      pagination:
+                        $ref: '#/components/schemas/Pagination'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /boosts/historical:
+    get:
+      tags:
+        - Boosts
+      summary: List historical boosts
+      description: Retrieve paginated list of deactivated/expired stock boosts
+      parameters:
+        - name: page
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+      responses:
+        '200':
+          description: Historical boosts retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: object
+                    properties:
+                      boosts:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/Boost'
+                      pagination:
+                        $ref: '#/components/schemas/Pagination'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /skus/search:
+    get:
+      tags:
+        - SKUs
+      summary: Search SKUs
+      description: Search for SKUs by query string
+      parameters:
+        - name: query
+          in: query
+          required: true
+          description: Search query string
+          schema:
+            type: string
+            minLength: 1
+            maxLength: 100
+            example: TSHIRT
+        - name: limit
+          in: query
+          description: Maximum number of results
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 10
+            example: 10
+      responses:
+        '200':
+          description: SKUs found
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/SKU'
+        '400':
+          description: Invalid query
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                success: false
+                error: Search query is required
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: JWT token obtained from /auth/login
+
+  schemas:
+    User:
+      type: object
+      required:
+        - id
+        - username
+      properties:
+        id:
+          type: string
+          example: user-1
+          description: Unique user identifier
+        username:
+          type: string
+          example: admin
+          description: Username
+        createdAt:
+          type: string
+          format: date-time
+          example: '2025-01-01T00:00:00Z'
+          description: Account creation timestamp
+
+    Boost:
+      type: object
+      required:
+        - id
+        - sku
+        - amount
+        - status
+        - createdBy
+        - createdAt
+      properties:
+        id:
+          type: string
+          example: boost-1
+          description: Unique boost identifier
+        sku:
+          type: string
+          example: TSHIRT-BLK-M
+          description: SKU identifier
+        amount:
+          type: number
+          format: double
+          example: 50
+          description: Stock boost amount
+        status:
+          type: string
+          enum: [active, completed, expired]
+          example: active
+          description: Current boost status
+        createdBy:
+          type: string
+          example: admin
+          description: Username who created the boost
+        createdAt:
+          type: string
+          format: date-time
+          example: '2025-11-05T10:00:00Z'
+          description: Boost creation timestamp
+        expiresAt:
+          type: string
+          format: date-time
+          nullable: true
+          example: '2025-12-31T23:59:59Z'
+          description: Optional expiration timestamp
+        deactivatedAt:
+          type: string
+          format: date-time
+          nullable: true
+          example: '2025-11-10T15:30:00Z'
+          description: Deactivation timestamp (if deactivated)
+        deactivationReason:
+          type: string
+          enum: [manual, expired, error]
+          nullable: true
+          example: manual
+          description: Reason for deactivation (if deactivated)
+
+    SKU:
+      type: object
+      required:
+        - id
+        - name
+        - category
+      properties:
+        id:
+          type: string
+          example: TSHIRT-BLK-M
+          description: SKU identifier
+        name:
+          type: string
+          example: Black T-Shirt (Medium)
+          description: Product name
+        category:
+          type: string
+          example: Apparel
+          description: Product category
+        currentStock:
+          type: integer
+          example: 100
+          description: Current stock level
+
+    Pagination:
+      type: object
+      required:
+        - page
+        - limit
+        - total
+        - totalPages
+      properties:
+        page:
+          type: integer
+          example: 1
+          description: Current page number
+        limit:
+          type: integer
+          example: 20
+          description: Items per page
+        total:
+          type: integer
+          example: 45
+          description: Total number of items
+        totalPages:
+          type: integer
+          example: 3
+          description: Total number of pages
+
+    Error:
+      type: object
+      required:
+        - success
+        - error
+      properties:
+        success:
+          type: boolean
+          example: false
+        error:
+          type: string
+          example: An error occurred
+          description: Error message
+
+  responses:
+    Unauthorized:
+      description: Unauthorized - Invalid or missing authentication token
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            success: false
+            error: Unauthorized
+
+    Forbidden:
+      description: Forbidden - Insufficient permissions
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            success: false
+            error: Forbidden
+
+    InternalServerError:
+      description: Internal server error
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            success: false
+            error: Internal server error

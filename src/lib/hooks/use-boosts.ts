@@ -25,7 +25,8 @@ export function useActiveBoosts() {
       if (!response.success) {
         throw new Error(response.error || 'Failed to fetch active boosts')
       }
-      return response.data
+      // Handle both array response and object with boosts property
+      return Array.isArray(response.data) ? response.data : response.data.boosts || []
     },
     staleTime: 5 * 60 * 1000, // 5 minutes
     gcTime: 10 * 60 * 1000, // 10 minutes
@@ -41,7 +42,11 @@ export function useHistoricalBoosts(page = 1, limit = 20) {
       if (!response.success) {
         throw new Error(response.error || 'Failed to fetch historical boosts')
       }
-      return response
+      // Extract boosts and pagination from nested data object
+      return {
+        boosts: response.data.boosts || [],
+        pagination: response.data.pagination
+      }
     },
     staleTime: 10 * 60 * 1000, // 10 minutes (historical data changes less frequently)
     gcTime: 15 * 60 * 1000, // 15 minutes
@@ -60,7 +65,8 @@ export function useSkuSearch(query: string, limit = 10) {
       if (!response.success) {
         throw new Error(response.error || 'Failed to search SKUs')
       }
-      return response.data
+      // Handle both array response and object with data property
+      return Array.isArray(response.data) ? response.data : []
     },
     enabled: query.trim().length > 0,
     staleTime: 30 * 1000, // 30 seconds (search results can be cached briefly)
@@ -131,9 +137,11 @@ export function useDeactivateBoost() {
         (oldData: any) => {
           if (!oldData) return oldData
           return {
-            ...oldData,
-            data: [deactivatedBoost, ...oldData.data],
-            total: oldData.total + 1
+            boosts: [deactivatedBoost, ...(oldData.boosts || [])],
+            pagination: {
+              ...oldData.pagination,
+              total: (oldData.pagination?.total || 0) + 1
+            }
           }
         }
       )

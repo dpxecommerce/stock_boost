@@ -16,7 +16,7 @@ export default function HistoricalBoostsTable({ className }: HistoricalBoostsTab
 
   const { data, isLoading, error, refetch } = useHistoricalBoosts(page, limit)
   
-  const boosts = data?.data || []
+  const boosts = data?.boosts || []
   const pagination = data?.pagination
 
   const formatDate = (date: Date) => {
@@ -29,11 +29,8 @@ export default function HistoricalBoostsTable({ className }: HistoricalBoostsTab
     }).format(new Date(date))
   }
 
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD'
-    }).format(amount)
+  const formatQuantity = (amount: number) => {
+    return Math.floor(amount).toLocaleString('en-US')
   }
 
   const getReasonBadge = (boost: StockBoost) => {
@@ -139,7 +136,7 @@ export default function HistoricalBoostsTable({ className }: HistoricalBoostsTab
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="text-sm text-gray-900">
-                      {formatCurrency(boost.amount)}
+                      {formatQuantity(boost.amount)}
                     </div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">

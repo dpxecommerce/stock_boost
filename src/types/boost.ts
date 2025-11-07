@@ -37,7 +37,6 @@ export interface CreateBoostRequest {
   priority?: 'high' | 'medium' | 'low'
   estimatedCost?: number
   supplier?: string
-  expiresAt?: Date | null
 }
 
 export interface DeactivateBoostRequest {

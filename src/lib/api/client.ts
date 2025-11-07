@@ -3,8 +3,7 @@ import { StockBoost, SKU, CreateBoostRequest, DeactivateBoostRequest } from '@/t
 import { ApiResponse, PaginatedResponse } from '@/types/api'
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8000'
-const API_VERSION = process.env.NEXT_PUBLIC_API_VERSION || 'v1'
-const BASE_URL = `${API_BASE_URL}/api/${API_VERSION}`
+const BASE_URL = `${API_BASE_URL}`
 
 class ApiClient {
   private getAuthHeaders(): HeadersInit {
@@ -81,11 +80,11 @@ class ApiClient {
 
   // Stock boost methods
   async getActiveBoosts(): Promise<ApiResponse<StockBoost[]>> {
-    return this.request<ApiResponse<StockBoost[]>>('/boosts?type=active')
+    return this.request<ApiResponse<StockBoost[]>>('/boosts/active')
   }
 
   async getHistoricalBoosts(page = 1, limit = 20): Promise<PaginatedResponse<StockBoost>> {
-    return this.request<PaginatedResponse<StockBoost>>(`/boosts?type=historical&page=${page}&limit=${limit}`)
+    return this.request<PaginatedResponse<StockBoost>>(`/boosts/historical?page=${page}&limit=${limit}`)
   }
 
   async createBoost(boost: CreateBoostRequest): Promise<ApiResponse<StockBoost>> {
@@ -96,15 +95,15 @@ class ApiClient {
   }
 
   async deactivateBoost(id: string, request: DeactivateBoostRequest): Promise<ApiResponse<StockBoost>> {
-    return this.request<ApiResponse<StockBoost>>(`/boosts/${id}`, {
-      method: 'DELETE',
+    return this.request<ApiResponse<StockBoost>>(`/boosts/${id}/deactivate`, {
+      method: 'POST',
       body: JSON.stringify(request)
     })
   }
 
   // SKU methods
   async searchSKUs(query: string, limit = 10): Promise<ApiResponse<SKU[]>> {
-    const params = new URLSearchParams({ q: query, limit: limit.toString() })
+    const params = new URLSearchParams({ query: query, limit: limit.toString() })
     return this.request<ApiResponse<SKU[]>>(`/skus/search?${params}`)
   }
 

@@ -213,7 +213,7 @@ class MockApiClient {
     
     return {
       success: true,
-      data: activeBoosts
+      data: { boosts: activeBoosts } as any
     }
   }
 
@@ -233,14 +233,16 @@ class MockApiClient {
     
     return {
       success: true,
-      data: paginatedBoosts,
-      pagination: {
-        page,
-        limit,
-        total: historicalBoosts.length,
-        totalPages: Math.ceil(historicalBoosts.length / limit)
+      data: {
+        boosts: paginatedBoosts,
+        pagination: {
+          page,
+          limit,
+          total: historicalBoosts.length,
+          totalPages: Math.ceil(historicalBoosts.length / limit)
+        }
       }
-    }
+    } as any
   }
 
   async createBoost(boost: CreateBoostRequest): Promise<ApiResponse<StockBoost>> {
@@ -280,7 +282,7 @@ class MockApiClient {
       createdBy: this.currentUser.id,
       deactivatedAt: null,
       deactivationReason: null,
-      expiresAt: boost.expiresAt || null
+      expiresAt: null
     }
     
     this.stockBoosts.push(newBoost)

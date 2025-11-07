@@ -42,11 +42,8 @@ export default function ActiveBoostsTable({ className }: ActiveBoostsTableProps)
     }).format(new Date(date))
   }
 
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD'
-    }).format(amount)
+  const formatQuantity = (amount: number) => {
+    return Math.floor(amount).toLocaleString('en-US')
   }
 
   if (isLoading) {
@@ -124,7 +121,7 @@ export default function ActiveBoostsTable({ className }: ActiveBoostsTableProps)
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="text-sm text-gray-900">
-                      {formatCurrency(boost.amount)}
+                      {formatQuantity(boost.amount)}
                     </div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
