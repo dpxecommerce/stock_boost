@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { api } from '@/lib/api/factory'
-import { StockBoost, SKU, CreateBoostRequest, DeactivateBoostRequest } from '@/types/boost'
+import { StockBoost, CreateBoostRequest, DeactivateBoostRequest } from '@/types/boost'
 
 // Query keys for caching
 export const boostKeys = {
@@ -26,7 +26,8 @@ export function useActiveBoosts() {
         throw new Error(response.error || 'Failed to fetch active boosts')
       }
       // Handle both array response and object with boosts property
-      return Array.isArray(response.data) ? response.data : response.data.boosts || []
+      if (!response.data) return []
+      return Array.isArray(response.data) ? response.data : []
     },
     staleTime: 5 * 60 * 1000, // 5 minutes
     gcTime: 10 * 60 * 1000, // 10 minutes
@@ -43,6 +44,9 @@ export function useHistoricalBoosts(page = 1, limit = 20) {
         throw new Error(response.error || 'Failed to fetch historical boosts')
       }
       // Extract boosts and pagination from nested data object
+      if (!response.data) {
+        return { boosts: [], pagination: undefined }
+      }
       return {
         boosts: response.data.boosts || [],
         pagination: response.data.pagination
@@ -134,7 +138,7 @@ export function useDeactivateBoost() {
       // Add to historical boosts cache if it exists
       queryClient.setQueryData(
         boostKeys.historicalWithPagination(1, 20),
-        (oldData: any) => {
+        (oldData: { boosts: StockBoost[]; pagination: { total: number; totalPages: number } } | undefined) => {
           if (!oldData) return oldData
           return {
             boosts: [deactivatedBoost, ...(oldData.boosts || [])],
