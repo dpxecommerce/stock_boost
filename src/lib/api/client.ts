@@ -101,24 +101,54 @@ class ApiClient {
     })
   }
 
-  // SKU methods - now using Typesense
+  // SKU methods - now using Typesense directly
   async searchSKUs(query: string, limit = 10): Promise<ApiResponse<SKU[]>> {
-    const params = new URLSearchParams({ q: query, limit: limit.toString() })
-    
-    // Use internal API route that leverages Typesense
-    const url = `/api/search/skus?${params}`
-    
-    const response = await fetch(url, {
-      method: 'GET',
-      headers: this.getAuthHeaders()
-    })
-
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => ({ error: 'Network error' }))
-      throw new Error(errorData.error || `HTTP ${response.status}`)
+    if (!query || query.trim().length === 0) {
+      return {
+        success: true,
+        data: []
+      }
     }
 
-    return response.json()
+    try {
+      // Import Typesense service dynamically to avoid SSR issues
+      const { typesenseSearchService } = await import('@/lib/services/typesense')
+      
+      // Search products using Typesense
+      const searchResults = await typesenseSearchService.searchProducts({
+        q: query.trim(),
+        queryBy: 'item_no,item_no2,description',
+        sortBy: '_text_match:desc',
+        page: 1,
+        perPage: limit
+      })
+
+      // Transform Typesense products to SKU format
+      const skus = searchResults.hits.map(hit => ({
+        id: hit.document.id,
+        sku: hit.document.item_no,
+        name: hit.document.description,
+        category: 'Products', // Default category since it's not in ProductDocument
+        currentStock: 0, // This would need to come from inventory system
+        isActive: true,
+        lastUsed: null,
+        // Additional fields that might be useful
+        itemNo2: hit.document.item_no2,
+        client: hit.document.client,
+        textMatch: hit.text_match
+      }))
+
+      return {
+        success: true,
+        data: skus
+      }
+    } catch (error) {
+      console.error('Typesense SKU search error:', error)
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'SKU search failed'
+      }
+    }
   }
 
   // Utility methods

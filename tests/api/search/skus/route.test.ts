@@ -81,7 +81,7 @@ describe('/api/search/skus', () => {
     expect(mockSearchProducts).toHaveBeenCalledWith({
       q: 'test',
       queryBy: 'item_no,item_no2,description',
-      sortBy: '_text_match:desc,item_no:asc',
+      sortBy: '_text_match:desc',
       page: 1,
       perPage: 10
     })

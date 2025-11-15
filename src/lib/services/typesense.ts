@@ -29,7 +29,7 @@ class TypesenseSearchService {
     q = '*',
     queryBy = 'item_no,item_no2,description,client',
     filterBy,
-    sortBy = '_text_match:desc,item_no:asc',
+    sortBy = '_text_match:desc',
     page = 1,
     perPage = 10
   }: ProductSearchParams): Promise<ProductSearchResponse> {
@@ -73,7 +73,7 @@ class TypesenseSearchService {
       q,
       queryBy,
       filterBy,
-      sortBy: '_text_match:desc,item_no:asc',
+      sortBy: '_text_match:desc',
       page,
       perPage
     });

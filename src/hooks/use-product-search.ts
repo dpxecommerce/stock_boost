@@ -1,5 +1,7 @@
 import { useState, useEffect } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { ProductDocument, ProductSearchResponse } from '@/types/typesense';
+import { typesenseSearchService } from '@/lib/services/typesense';
 
 interface UseProductSearchOptions {
   query?: string;
@@ -44,7 +46,7 @@ export function useProductSearch({
     return () => clearTimeout(timer);
   }, [query, debounceMs]);
 
-  // Search function
+  // Search function using Typesense service directly
   const searchProducts = async () => {
     if (!enabled || (debouncedQuery.length < 2 && debouncedQuery !== '*')) {
       setData(null);
@@ -55,29 +57,15 @@ export function useProductSearch({
     setError(null);
 
     try {
-      const params = new URLSearchParams({
+      const searchResults = await typesenseSearchService.searchProducts({
         q: debouncedQuery,
-        query_by: queryBy,
-        page: page.toString(),
-        per_page: perPage.toString(),
+        queryBy,
+        filterBy,
+        page,
+        perPage
       });
 
-      if (filterBy) {
-        params.append('filter_by', filterBy);
-      }
-
-      const response = await fetch(`/api/search/products?${params}`);
-      const result = await response.json();
-
-      if (!response.ok) {
-        throw new Error(result.error || 'Search failed');
-      }
-
-      if (result.success) {
-        setData(result.data);
-      } else {
-        throw new Error(result.error || 'Search failed');
-      }
+      setData(searchResults);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Search failed');
       setData(null);
@@ -108,7 +96,7 @@ export function useProductSearch({
   };
 }
 
-// Hook for product suggestions/autocomplete
+// Hook for product suggestions/autocomplete using Typesense service directly
 export function useProductSuggestions(query: string, limit = 5) {
   const [suggestions, setSuggestions] = useState<ProductDocument[]>([]);
   const [loading, setLoading] = useState(false);
@@ -122,20 +110,8 @@ export function useProductSuggestions(query: string, limit = 5) {
     const fetchSuggestions = async () => {
       setLoading(true);
       try {
-        const params = new URLSearchParams({
-          q: query,
-          query_by: 'item_no,item_no2,description',
-          per_page: limit.toString(),
-        });
-
-        const response = await fetch(`/api/search/products?${params}`);
-        const result = await response.json();
-
-        if (result.success && result.data.hits) {
-          setSuggestions(result.data.hits.map((hit: { document: ProductDocument }) => hit.document));
-        } else {
-          setSuggestions([]);
-        }
+        const productSuggestions = await typesenseSearchService.getProductSuggestions(query, limit);
+        setSuggestions(productSuggestions);
       } catch (error) {
         console.error('Failed to fetch suggestions:', error);
         setSuggestions([]);
@@ -149,4 +125,65 @@ export function useProductSuggestions(query: string, limit = 5) {
   }, [query, limit]);
 
   return { suggestions, loading };
+}
+
+// React Query version with better caching and state management
+export const productSearchKeys = {
+  all: ['products'] as const,
+  search: (query: string, options: Omit<UseProductSearchOptions, 'query'>) => 
+    [...productSearchKeys.all, 'search', query, options] as const,
+  suggestions: (query: string, limit: number) => 
+    [...productSearchKeys.all, 'suggestions', query, limit] as const,
+}
+
+export function useProductSearchQuery({
+  query = '',
+  queryBy = 'item_no,item_no2,description,client',
+  filterBy,
+  page = 1,
+  perPage = 10,
+  enabled = true
+}: UseProductSearchOptions = {}) {
+  return useQuery({
+    queryKey: productSearchKeys.search(query, { queryBy, filterBy, page, perPage, enabled }),
+    queryFn: async () => {
+      if (query.length < 2 && query !== '*') {
+        return {
+          found: 0,
+          out_of: 0,
+          page: 1,
+          request_params: { collection_name: 'products', per_page: perPage, q: query },
+          search_time_ms: 0,
+          hits: []
+        } as ProductSearchResponse;
+      }
+
+      return await typesenseSearchService.searchProducts({
+        q: query,
+        queryBy,
+        filterBy,
+        sortBy: '_text_match:desc',
+        page,
+        perPage
+      });
+    },
+    enabled: enabled && (query.length >= 2 || query === '*'),
+    staleTime: 30 * 1000, // 30 seconds
+    gcTime: 2 * 60 * 1000, // 2 minutes
+  });
+}
+
+export function useProductSuggestionsQuery(query: string, limit = 5) {
+  return useQuery({
+    queryKey: productSearchKeys.suggestions(query, limit),
+    queryFn: async () => {
+      if (query.length < 2) {
+        return [];
+      }
+      return await typesenseSearchService.getProductSuggestions(query, limit);
+    },
+    enabled: query.length >= 2,
+    staleTime: 30 * 1000, // 30 seconds
+    gcTime: 2 * 60 * 1000, // 2 minutes
+  });
 }

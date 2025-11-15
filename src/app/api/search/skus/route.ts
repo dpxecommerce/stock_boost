@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { typesenseSearchService } from '@/lib/services/typesense';
 
+export const dynamic = 'force-dynamic';
+
 export async function GET(request: NextRequest) {
   try {
     const searchParams = request.nextUrl.searchParams;
@@ -26,7 +28,7 @@ export async function GET(request: NextRequest) {
     const searchResults = await typesenseSearchService.searchProducts({
       q: query.trim(),
       queryBy: 'item_no,item_no2,description',
-      sortBy: '_text_match:desc,item_no:asc',
+      sortBy: '_text_match:desc',
       page: 1,
       perPage: limit
     });

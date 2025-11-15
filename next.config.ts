@@ -1,13 +1,14 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  output: 'export',
+  // Temporarily disabled static export to support API routes
+  // output: 'export',
   trailingSlash: true,
   images: {
     unoptimized: true
   },
-  // Optimize for static export
-  distDir: 'out'
+  // Optimize for production build
+  distDir: '.next'
 };
 
 export default nextConfig;
