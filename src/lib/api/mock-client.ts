@@ -213,7 +213,7 @@ class MockApiClient {
     
     return {
       success: true,
-      data: { boosts: activeBoosts } as any
+      data: activeBoosts
     }
   }
 
@@ -242,7 +242,7 @@ class MockApiClient {
           totalPages: Math.ceil(historicalBoosts.length / limit)
         }
       }
-    } as any
+    }
   }
 
   async createBoost(boost: CreateBoostRequest): Promise<ApiResponse<StockBoost>> {
@@ -321,7 +321,7 @@ class MockApiClient {
     }
   }
 
-  // SKU methods
+  // SKU methods - now using Typesense when available
   async searchSKUs(query: string, limit = 10): Promise<ApiResponse<SKU[]>> {
     await delay(200)
     
@@ -329,10 +329,35 @@ class MockApiClient {
       throw new Error('Not authenticated')
     }
     
-    if (!query) {
-      throw new Error('Search query is required')
+    if (!query || query.trim().length === 0) {
+      return {
+        success: true,
+        data: []
+      }
+    }
+
+    // Try to use Typesense first if configured
+    try {
+      const params = new URLSearchParams({ q: query.trim(), limit: limit.toString() })
+      const response = await fetch(`/api/search/skus?${params}`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${this.authToken}`
+        }
+      })
+      
+      if (response.ok) {
+        const result = await response.json()
+        if (result.success) {
+          return result
+        }
+      }
+    } catch (error) {
+      console.warn('Typesense SKU search failed, falling back to mock data:', error)
     }
     
+    // Fallback to mock data if Typesense fails
     const filteredSKUs = mockSKUs.filter(sku => 
       (sku.id && sku.id.toLowerCase().includes(query.toLowerCase())) ||
       sku.sku.toLowerCase().includes(query.toLowerCase()) ||

@@ -28,6 +28,10 @@ export interface SKU {
   currentStock?: number
   isActive: boolean
   lastUsed: Date | null
+  // Additional Typesense fields
+  itemNo2?: string
+  client?: string
+  textMatch?: number
 }
 
 export interface CreateBoostRequest {

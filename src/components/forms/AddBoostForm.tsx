@@ -57,9 +57,10 @@ export default function AddBoostForm({
     // Additional validation using Zod schema
     try {
       CreateBoostSchema.parse(formData)
-    } catch (error: any) {
-      if (error.errors) {
-        error.errors.forEach((err: any) => {
+    } catch (error: unknown) {
+      if (error && typeof error === 'object' && 'errors' in error) {
+        const zodError = error as { errors: Array<{ path: string[]; message: string }> }
+        zodError.errors.forEach((err) => {
           if (err.path.length > 0) {
             const field = err.path[0] as keyof FormErrors
             newErrors[field] = err.message

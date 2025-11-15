@@ -101,10 +101,24 @@ class ApiClient {
     })
   }
 
-  // SKU methods
+  // SKU methods - now using Typesense
   async searchSKUs(query: string, limit = 10): Promise<ApiResponse<SKU[]>> {
-    const params = new URLSearchParams({ query: query, limit: limit.toString() })
-    return this.request<ApiResponse<SKU[]>>(`/skus/search?${params}`)
+    const params = new URLSearchParams({ q: query, limit: limit.toString() })
+    
+    // Use internal API route that leverages Typesense
+    const url = `/api/search/skus?${params}`
+    
+    const response = await fetch(url, {
+      method: 'GET',
+      headers: this.getAuthHeaders()
+    })
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({ error: 'Network error' }))
+      throw new Error(errorData.error || `HTTP ${response.status}`)
+    }
+
+    return response.json()
   }
 
   // Utility methods
