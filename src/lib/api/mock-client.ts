@@ -321,7 +321,7 @@ class MockApiClient {
     }
   }
 
-  // SKU methods - now using Typesense directly with mock fallback
+  // SKU methods
   async searchSKUs(query: string, limit = 10): Promise<ApiResponse<SKU[]>> {
     await delay(200)
     
@@ -329,51 +329,10 @@ class MockApiClient {
       throw new Error('Not authenticated')
     }
     
-    if (!query || query.trim().length === 0) {
-      return {
-        success: true,
-        data: []
-      }
-    }
-
-    // Try to use Typesense first if configured
-    try {
-      // Import Typesense service dynamically to avoid SSR issues
-      const { typesenseSearchService } = await import('@/lib/services/typesense')
-      
-      // Search products using Typesense
-      const searchResults = await typesenseSearchService.searchProducts({
-        q: query.trim(),
-        queryBy: 'item_no,item_no2,description',
-        sortBy: '_text_match:desc',
-        page: 1,
-        perPage: limit
-      })
-
-      // Transform Typesense products to SKU format
-      const skus = searchResults.hits.map(hit => ({
-        id: hit.document.id,
-        sku: hit.document.item_no,
-        name: hit.document.description,
-        category: 'Products',
-        currentStock: 0, // This would need to come from inventory system
-        isActive: true,
-        lastUsed: null,
-        // Additional fields that might be useful
-        itemNo2: hit.document.item_no2,
-        client: hit.document.client,
-        textMatch: hit.text_match
-      }))
-
-      return {
-        success: true,
-        data: skus
-      }
-    } catch (error) {
-      console.warn('Typesense SKU search failed, falling back to mock data:', error)
+    if (!query) {
+      throw new Error('Search query is required')
     }
     
-    // Fallback to mock data if Typesense fails
     const filteredSKUs = mockSKUs.filter(sku => 
       (sku.id && sku.id.toLowerCase().includes(query.toLowerCase())) ||
       sku.sku.toLowerCase().includes(query.toLowerCase()) ||
