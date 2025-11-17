@@ -80,7 +80,12 @@ class ApiClient {
 
   // Stock boost methods
   async getActiveBoosts(): Promise<ApiResponse<StockBoost[]>> {
-    return this.request<ApiResponse<StockBoost[]>>('/boosts/active')
+    const response = await this.request<{ success: boolean; data: { boosts: StockBoost[] } }>('/boosts/active')
+    // Transform response to match expected format
+    return {
+      success: response.success,
+      data: response.data?.boosts || []
+    }
   }
 
   async getHistoricalBoosts(page = 1, limit = 20): Promise<PaginatedResponse<StockBoost>> {
@@ -94,7 +99,7 @@ class ApiClient {
     })
   }
 
-  async deactivateBoost(id: string, request: DeactivateBoostRequest): Promise<ApiResponse<StockBoost>> {
+  async deactivateBoost(id: number, request: DeactivateBoostRequest): Promise<ApiResponse<StockBoost>> {
     return this.request<ApiResponse<StockBoost>>(`/boosts/${id}/deactivate`, {
       method: 'POST',
       body: JSON.stringify(request)
@@ -107,7 +112,44 @@ class ApiClient {
       query: query, 
       limit: limit.toString() 
     })
-    return this.request<ApiResponse<SKU[]>>(`/skus/search?${params}`)
+    
+    const response = await this.request<ApiResponse<Array<{
+      id: string
+      item_no: string
+      item_no2: string
+      description: string
+      client?: string
+      row_id?: number
+      current_stock?: number
+      stock_last_updated_at?: string
+    }>>>(`/skus/search?${params}`)
+    
+    // Transform the API response to SKU format
+    if (response.success && response.data) {
+      const transformedData: SKU[] = response.data.map(item => ({
+        id: item.id,
+        sku: item.item_no,
+        name: item.description,
+        category: 'Products',
+        currentStock: item.current_stock || 0,
+        isActive: true,
+        lastUsed: null,
+        // Additional fields
+        itemNo2: item.item_no2,
+        client: item.client,
+        stockLastUpdatedAt: item.stock_last_updated_at
+      }))
+      
+      return {
+        success: true,
+        data: transformedData
+      }
+    }
+    
+    return {
+      success: false,
+      error: response.error || 'Failed to search SKUs'
+    }
   }
 
   // Utility methods

@@ -162,8 +162,29 @@ export default function AddBoostForm({
                 onClick={() => handleSkuSelect(sku.sku)}
                 className="w-full px-4 py-2 text-left hover:bg-gray-100 focus:bg-gray-100 focus:outline-none"
               >
-                <div className="font-medium">{sku.sku}</div>
-                <div className="text-sm text-gray-500">{sku.name}</div>
+                <div className="flex justify-between items-start">
+                  <div className="flex-1">
+                    <div className="font-medium">{sku.sku}</div>
+                    <div className="text-sm text-gray-500">{sku.name}</div>
+                    {sku.client && (
+                      <div className="text-xs text-gray-400 mt-1">
+                        Client: {sku.client}
+                      </div>
+                    )}
+                  </div>
+                  <div className="ml-3 text-right">
+                    {sku.currentStock !== undefined && (
+                      <div className="text-sm font-medium text-gray-700">
+                        Stock: {sku.currentStock}
+                      </div>
+                    )}
+                    {sku.stockLastUpdatedAt && (
+                      <div className="text-xs text-gray-400 mt-1">
+                        {new Date(sku.stockLastUpdatedAt).toLocaleDateString()}
+                      </div>
+                    )}
+                  </div>
+                </div>
               </button>
             ))}
           </div>

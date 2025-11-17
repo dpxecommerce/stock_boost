@@ -1,23 +1,10 @@
 export interface StockBoost {
-  id: string
+  id: number
   sku: string
-  productName?: string
-  currentStock?: number
-  targetStock?: number
-  boostAmount?: number
-  amount: number
-  priority?: 'high' | 'medium' | 'low'
   status: 'active' | 'inactive' | 'completed'
-  estimatedCost?: number
-  supplier?: string
-  createdAt: Date
-  updatedAt?: Date
-  createdBy: string
-  deactivatedAt: Date | null
-  deactivationReason: 'expired' | 'manual' | null
-  expiresAt: Date | null
-  completedAt?: Date
-  completionReason?: string
+  amount: number
+  sourceProductId: number
+  createdAt: string
 }
 
 export interface SKU {
@@ -32,6 +19,7 @@ export interface SKU {
   itemNo2?: string
   client?: string
   textMatch?: number
+  stockLastUpdatedAt?: string
 }
 
 export interface CreateBoostRequest {

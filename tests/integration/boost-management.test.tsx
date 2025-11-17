@@ -24,26 +24,20 @@ const mockUser: User = {
 
 const mockActiveBoosts: StockBoost[] = [
   {
-    id: '1',
+    id: 1,
     sku: 'TEST-SKU-1',
-    amount: 10.00,
+    amount: 10,
     status: 'active',
-    createdBy: '1',
-    createdAt: new Date('2024-01-01T00:00:00Z'),
-    deactivatedAt: null,
-    deactivationReason: null,
-    expiresAt: null
+    sourceProductId: 1,
+    createdAt: '2024-01-01T00:00:00Z'
   },
   {
-    id: '2',
+    id: 2,
     sku: 'TEST-SKU-2', 
-    amount: 15.00,
+    amount: 15,
     status: 'active',
-    createdBy: '1',
-    createdAt: new Date('2024-01-02T00:00:00Z'),
-    deactivatedAt: null,
-    deactivationReason: null,
-    expiresAt: null
+    sourceProductId: 2,
+    createdAt: '2024-01-02T00:00:00Z'
   }
 ]
 
@@ -90,30 +84,24 @@ describe('Boost Management Integration', () => {
     vi.mocked(mockedApi.createBoost).mockResolvedValue({
       success: true,
       data: {
-        id: '3',
+        id: 3,
         sku: 'TEST-SKU-3',
-        amount: 5.00,
+        amount: 5,
         status: 'active' as const,
-        createdBy: '1',
-        createdAt: new Date('2024-01-03T00:00:00Z'),
-        deactivatedAt: null,
-        deactivationReason: null,
-        expiresAt: null
+        sourceProductId: 3,
+        createdAt: '2024-01-03T00:00:00Z'
       }
     })
     
     vi.mocked(mockedApi.deactivateBoost).mockResolvedValue({
       success: true,
       data: {
-        id: '1',
+        id: 1,
         sku: 'TEST-SKU-1',
-        amount: 10.00,
-        status: 'inactive' as const,
-        createdBy: '1',
-        createdAt: new Date('2024-01-01T00:00:00Z'),
-        deactivatedAt: new Date(),
-        deactivationReason: 'manual' as const,
-        expiresAt: null
+        amount: 10,
+        status: 'completed' as const,
+        sourceProductId: 1,
+        createdAt: '2024-01-01T00:00:00Z'
       }
     })
   })
@@ -199,7 +187,7 @@ describe('Boost Management Integration', () => {
     
     // Verify API was called
     await waitFor(() => {
-      expect(mockedApi.deactivateBoost).toHaveBeenCalledWith('1', { reason: 'manual' })
+      expect(mockedApi.deactivateBoost).toHaveBeenCalledWith(1, { reason: 'manual' })
     })
   })
 

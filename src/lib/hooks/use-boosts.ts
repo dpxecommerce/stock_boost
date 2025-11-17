@@ -116,7 +116,7 @@ export function useDeactivateBoost() {
   const queryClient = useQueryClient()
 
   return useMutation({
-    mutationFn: async ({ id, request }: { id: string; request: DeactivateBoostRequest }) => {
+    mutationFn: async ({ id, request }: { id: number; request: DeactivateBoostRequest }) => {
       const response = await api.deactivateBoost(id, request)
       if (!response.success) {
         throw new Error(response.error || 'Failed to deactivate boost')

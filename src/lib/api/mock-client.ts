@@ -22,62 +22,28 @@ const mockUsers: Record<string, { id: string; username: string; password: string
 
 const mockStockBoosts: StockBoost[] = [
   {
-    id: 'boost-1',
+    id: 1,
     sku: 'SKU-001',
-    productName: 'Premium Widget A',
-    currentStock: 45,
-    targetStock: 100,
-    boostAmount: 55,
     amount: 55,
-    priority: 'high',
     status: 'active',
-    estimatedCost: 2750.00,
-    supplier: 'Widget Corp',
-    createdAt: new Date('2024-11-01T10:00:00Z'),
-    updatedAt: new Date('2024-11-01T10:00:00Z'),
-    createdBy: 'user-1',
-    deactivatedAt: null,
-    deactivationReason: null,
-    expiresAt: null
+    sourceProductId: 1,
+    createdAt: '2024-11-01T10:00:00Z'
   },
   {
-    id: 'boost-2',
+    id: 2,
     sku: 'SKU-002', 
-    productName: 'Standard Widget B',
-    currentStock: 12,
-    targetStock: 50,
-    boostAmount: 38,
     amount: 38,
-    priority: 'medium',
     status: 'active',
-    estimatedCost: 1140.00,
-    supplier: 'Global Supplies',
-    createdAt: new Date('2024-11-02T14:30:00Z'),
-    updatedAt: new Date('2024-11-02T14:30:00Z'),
-    createdBy: 'user-1',
-    deactivatedAt: null,
-    deactivationReason: null,
-    expiresAt: null
+    sourceProductId: 2,
+    createdAt: '2024-11-02T14:30:00Z'
   },
   {
-    id: 'boost-3',
+    id: 3,
     sku: 'SKU-003',
-    productName: 'Economy Widget C', 
-    currentStock: 78,
-    targetStock: 80,
-    boostAmount: 2,
     amount: 2,
-    priority: 'low',
     status: 'completed',
-    estimatedCost: 60.00,
-    supplier: 'Budget Parts',
-    createdAt: new Date('2024-10-30T09:15:00Z'),
-    updatedAt: new Date('2024-11-01T16:45:00Z'),
-    createdBy: 'user-2',
-    completedAt: new Date('2024-11-01T16:45:00Z'),
-    deactivatedAt: null,
-    deactivationReason: null,
-    expiresAt: null
+    sourceProductId: 3,
+    createdAt: '2024-10-30T09:15:00Z'
   }
 ]
 
@@ -252,37 +218,26 @@ class MockApiClient {
       throw new Error('Not authenticated')
     }
 
-    const { sku, amount, targetStock, priority, estimatedCost, supplier } = boost
+    const { sku, amount } = boost
     
-    if (!sku || (!amount && !targetStock) || !priority) {
-      throw new Error('SKU, amount/target stock, and priority are required')
+    if (!sku || !amount) {
+      throw new Error('SKU and amount are required')
     }
     
-    const skuData = mockSKUs.find(s => s.id === sku)
+    const skuData = mockSKUs.find(s => s.sku === sku)
     if (!skuData) {
       throw new Error('SKU not found')
     }
     
-    const finalAmount = amount || (targetStock ? targetStock - (skuData.currentStock || 0) : 0)
+    const newId = Math.max(...this.stockBoosts.map(b => b.id), 0) + 1
     
     const newBoost: StockBoost = {
-      id: 'boost-' + Math.random().toString(36).substr(2, 9),
+      id: newId,
       sku,
-      productName: skuData.name,
-      currentStock: skuData.currentStock,
-      targetStock: targetStock || (skuData.currentStock || 0) + finalAmount,
-      boostAmount: finalAmount,
-      amount: finalAmount,
-      priority,
+      amount,
       status: 'active',
-      estimatedCost: parseFloat(estimatedCost?.toString() || '0'),
-      supplier: supplier || 'TBD',
-      createdAt: new Date(),
-      updatedAt: new Date(),
-      createdBy: this.currentUser.id,
-      deactivatedAt: null,
-      deactivationReason: null,
-      expiresAt: null
+      sourceProductId: newId,
+      createdAt: new Date().toISOString()
     }
     
     this.stockBoosts.push(newBoost)
@@ -293,7 +248,7 @@ class MockApiClient {
     }
   }
 
-  async deactivateBoost(id: string, request: DeactivateBoostRequest): Promise<ApiResponse<StockBoost>> {
+  async deactivateBoost(id: number, _request: DeactivateBoostRequest): Promise<ApiResponse<StockBoost>> {
     await delay(400)
     
     if (!this.currentUser) {
@@ -309,10 +264,7 @@ class MockApiClient {
     // Mark as completed instead of actually deleting
     this.stockBoosts[boostIndex] = {
       ...this.stockBoosts[boostIndex],
-      status: 'completed',
-      completedAt: new Date(),
-      completionReason: request.reason || 'Manual deactivation',
-      updatedAt: new Date()
+      status: 'completed'
     }
     
     return {

@@ -13,7 +13,7 @@ interface ActiveBoostsTableProps {
 export default function ActiveBoostsTable({ className }: ActiveBoostsTableProps) {
   const { data: boosts = [], isLoading, error, refetch } = useActiveBoosts()
   const deactivateBoostMutation = useDeactivateBoost()
-  const [deactivatingId, setDeactivatingId] = useState<string | null>(null)
+  const [deactivatingId, setDeactivatingId] = useState<number | null>(null)
 
   const handleDeactivate = async (boost: StockBoost) => {
     if (deactivatingId) return // Prevent multiple simultaneous deactivations
@@ -32,7 +32,7 @@ export default function ActiveBoostsTable({ className }: ActiveBoostsTableProps)
     }
   }
 
-  const formatDate = (date: Date) => {
+  const formatDate = (date: string) => {
     return new Intl.DateTimeFormat('en-US', {
       year: 'numeric',
       month: 'short',

@@ -108,10 +108,22 @@ export default function ProductSearch({
                     <p className="mt-1 text-sm text-gray-600 line-clamp-2">
                       {product.description}
                     </p>
-                    {product.client && (
-                      <span className="inline-block mt-1 px-2 py-1 text-xs bg-blue-100 text-blue-800 rounded">
-                        {product.client}
-                      </span>
+                    <div className="mt-2 flex items-center gap-2">
+                      {product.client && (
+                        <span className="inline-block px-2 py-1 text-xs bg-blue-100 text-blue-800 rounded">
+                          Client: {product.client}
+                        </span>
+                      )}
+                      {product.current_stock !== undefined && (
+                        <span className="inline-block px-2 py-1 text-xs bg-green-100 text-green-800 rounded">
+                          Stock: {product.current_stock}
+                        </span>
+                      )}
+                    </div>
+                    {product.stock_last_updated_at && (
+                      <div className="text-xs text-gray-400 mt-1">
+                        Last updated: {new Date(product.stock_last_updated_at).toLocaleString()}
+                      </div>
                     )}
                   </div>
                 </div>

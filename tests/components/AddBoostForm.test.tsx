@@ -47,15 +47,12 @@ describe('AddBoostForm Component', () => {
     mockedApi.createBoost.mockResolvedValue({
       success: true,
       data: {
-        id: '1',
+        id: 1,
         sku: 'SKU-001',
-        amount: 10.00,
+        amount: 10,
         status: 'active',
-        createdBy: '1',
-        createdAt: new Date(),
-        deactivatedAt: null,
-        deactivationReason: null,
-        expiresAt: null
+        sourceProductId: 1,
+        createdAt: '2024-01-01T00:00:00Z'
       }
     })
   })

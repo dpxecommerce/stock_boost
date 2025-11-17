@@ -51,6 +51,16 @@ export default function TypesenseTestPage() {
                     <span className="font-medium">Client:</span> {selectedProduct.client}
                   </div>
                 )}
+                {selectedProduct.current_stock !== undefined && (
+                  <div>
+                    <span className="font-medium">Current Stock:</span> {selectedProduct.current_stock}
+                  </div>
+                )}
+                {selectedProduct.stock_last_updated_at && (
+                  <div>
+                    <span className="font-medium">Last Updated:</span> {new Date(selectedProduct.stock_last_updated_at).toLocaleString()}
+                  </div>
+                )}
               </div>
             </div>
           ) : (

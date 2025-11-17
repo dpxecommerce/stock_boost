@@ -19,7 +19,7 @@ export default function HistoricalBoostsTable({ className }: HistoricalBoostsTab
   const boosts = data?.boosts || []
   const pagination = data?.pagination
 
-  const formatDate = (date: Date) => {
+  const formatDate = (date: string) => {
     return new Intl.DateTimeFormat('en-US', {
       year: 'numeric',
       month: 'short',
@@ -31,28 +31,6 @@ export default function HistoricalBoostsTable({ className }: HistoricalBoostsTab
 
   const formatQuantity = (amount: number) => {
     return Math.floor(amount).toLocaleString('en-US')
-  }
-
-  const getReasonBadge = (boost: StockBoost) => {
-    if (boost.deactivationReason === 'manual') {
-      return (
-        <span className="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-800">
-          Manual
-        </span>
-      )
-    }
-    if (boost.deactivationReason === 'expired') {
-      return (
-        <span className="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-orange-100 text-orange-800">
-          Expired
-        </span>
-      )
-    }
-    return (
-      <span className="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-gray-100 text-gray-800">
-        Unknown
-      </span>
-    )
   }
 
   if (isLoading) {
@@ -113,13 +91,7 @@ export default function HistoricalBoostsTable({ className }: HistoricalBoostsTab
                   Status
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Reason
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Created
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Deactivated
                 </th>
               </tr>
             </thead>
@@ -130,9 +102,6 @@ export default function HistoricalBoostsTable({ className }: HistoricalBoostsTab
                     <div className="text-sm font-medium text-gray-900">
                       {boost.sku}
                     </div>
-                    {boost.productName && (
-                      <div className="text-xs text-gray-500">{boost.productName}</div>
-                    )}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="text-sm text-gray-900">
@@ -144,14 +113,8 @@ export default function HistoricalBoostsTable({ className }: HistoricalBoostsTab
                       {boost.status}
                     </span>
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    {getReasonBadge(boost)}
-                  </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                     {formatDate(boost.createdAt)}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {boost.deactivatedAt ? formatDate(boost.deactivatedAt) : '-'}
                   </td>
                 </tr>
               ))}

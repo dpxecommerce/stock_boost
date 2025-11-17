@@ -4,6 +4,9 @@ export interface ProductDocument {
   item_no2: string;              // Secondary item number
   description: string;           // Product description
   client?: string;               // Client information (optional)
+  row_id?: number;               // Database row ID
+  current_stock?: number;        // Current stock quantity
+  stock_last_updated_at?: string; // Last stock update timestamp
 }
 
 export interface ProductCollectionSchema {
