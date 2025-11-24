@@ -69,24 +69,19 @@ export default function TypesenseTestPage() {
         </div>
       </div>
 
-      {/* API Test Instructions */}
+      {/* Direct Integration Info */}
       <div className="mt-12 bg-blue-50 p-6 rounded-lg">
-        <h2 className="text-xl font-semibold mb-4">API Test Instructions</h2>
-        <p className="mb-4">You can test the API directly using curl:</p>
-        <div className="bg-white p-4 rounded border font-mono text-sm overflow-x-auto">
-          <div className="mb-2">
-            <strong>Basic search:</strong>
+        <h2 className="text-xl font-semibold mb-4">Direct Typesense Integration</h2>
+        <p className="mb-4">
+          This page uses direct Typesense integration without API routes for compatibility with static export builds.
+        </p>
+        <div className="bg-white p-4 rounded border">
+          <div className="space-y-2">
+            <div><strong>Search Service:</strong> typesenseSearchService</div>
+            <div><strong>Collection:</strong> products</div>
+            <div><strong>Query Fields:</strong> item_no, item_no2, description, client</div>
+            <div><strong>Build Type:</strong> Static Export (no server-side features)</div>
           </div>
-          <code className="block mb-4">
-            curl &quot;http://localhost:3000/api/search/products?q=*&amp;per_page=10&amp;page=1&quot;
-          </code>
-          
-          <div className="mb-2">
-            <strong>Your original curl equivalent:</strong>
-          </div>
-          <code className="block">
-            curl &quot;http://localhost:3000/api/search/products?q=*&amp;query_by=item_no,item_no2,description,client&amp;per_page=10&amp;page=1&quot;
-          </code>
         </div>
       </div>
     </div>

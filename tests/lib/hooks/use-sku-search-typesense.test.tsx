@@ -77,9 +77,8 @@ describe('useSkuSearch with Typesense', () => {
     })
 
     expect(fetch).toHaveBeenCalledWith(
-      '/api/search/skus?q=test&limit=10',
+      'http://localhost:8000/skus/search?query=test&limit=10',
       expect.objectContaining({
-        method: 'GET',
         headers: expect.objectContaining({
           'Content-Type': 'application/json'
         })
