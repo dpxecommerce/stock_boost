@@ -1,6 +1,6 @@
 import { AuthResponse, User } from '@/types/auth'
 import { StockBoost, SKU, CreateBoostRequest, DeactivateBoostRequest } from '@/types/boost'
-import { ApiResponse, PaginatedResponse } from '@/types/api'
+import { ApiResponse, PaginatedResponse, SyncbackInfo } from '@/types/api'
 
 // Mock data
 const mockUsers: Record<string, { id: string; username: string; password: string; email: string; role: string }> = {
@@ -27,7 +27,36 @@ const mockStockBoosts: StockBoost[] = [
     amount: 55,
     status: 'active',
     sourceProductId: 1,
-    createdAt: '2024-11-01T10:00:00Z'
+    createdAt: '2024-11-01T10:00:00Z',
+    sourceStock: 120,
+    targetStocks: [
+      {
+        id: 1,
+        syncback_job_id: 101,
+        item_id: 'ITEM-001-A',
+        variation_id: 'VAR-001',
+        sku: 'SKU-001-A',
+        current_quantity: 30,
+        booked_quantity: 5,
+        to_sync: true,
+        amount: 20,
+        boost_quantity: 20,
+        sellable_quantity: 45
+      },
+      {
+        id: 2,
+        syncback_job_id: 101,
+        item_id: 'ITEM-001-B',
+        variation_id: 'VAR-002',
+        sku: 'SKU-001-B',
+        current_quantity: 25,
+        booked_quantity: 3,
+        to_sync: true,
+        amount: 35,
+        boost_quantity: 35,
+        sellable_quantity: 57
+      }
+    ]
   },
   {
     id: 2,
@@ -35,7 +64,23 @@ const mockStockBoosts: StockBoost[] = [
     amount: 38,
     status: 'active',
     sourceProductId: 2,
-    createdAt: '2024-11-02T14:30:00Z'
+    createdAt: '2024-11-02T14:30:00Z',
+    sourceStock: 85,
+    targetStocks: [
+      {
+        id: 3,
+        syncback_job_id: 102,
+        item_id: 'ITEM-002-A',
+        variation_id: null,
+        sku: 'SKU-002',
+        current_quantity: 12,
+        booked_quantity: 2,
+        to_sync: true,
+        amount: 38,
+        boost_quantity: 38,
+        sellable_quantity: 48
+      }
+    ]
   },
   {
     id: 3,
@@ -43,7 +88,9 @@ const mockStockBoosts: StockBoost[] = [
     amount: 2,
     status: 'completed',
     sourceProductId: 3,
-    createdAt: '2024-10-30T09:15:00Z'
+    createdAt: '2024-10-30T09:15:00Z',
+    sourceStock: 78,
+    targetStocks: []
   }
 ]
 
@@ -55,6 +102,14 @@ const mockSKUs: SKU[] = [
   { id: 'SKU-005', sku: 'SKU-005', name: 'Basic Tool Y', category: 'Tools', currentStock: 67, isActive: true, lastUsed: null },
   { id: 'SKU-006', sku: 'SKU-006', name: 'Advanced Component Z', category: 'Components', currentStock: 8, isActive: true, lastUsed: null }
 ]
+
+const mockSyncbackInfo: SyncbackInfo = {
+  '101': 'Shopee Malaysia Sync',
+  '102': 'Lazada Thailand Sync',
+  '103': 'Tokopedia Indonesia Sync',
+  '104': 'Shopee Singapore Sync',
+  '105': 'TikTok Shop Vietnam Sync'
+}
 
 // Helper function to simulate API delay
 const delay = (ms: number = 500) => new Promise(resolve => setTimeout(resolve, ms))
@@ -237,7 +292,23 @@ class MockApiClient {
       amount,
       status: 'active',
       sourceProductId: newId,
-      createdAt: new Date().toISOString()
+      createdAt: new Date().toISOString(),
+      sourceStock: skuData.currentStock || 0,
+      targetStocks: [
+        {
+          id: newId * 10 + 1,
+          syncback_job_id: newId * 100,
+          item_id: `ITEM-${sku}-A`,
+          variation_id: `VAR-${newId}`,
+          sku: `${sku}-TARGET`,
+          current_quantity: Math.floor(amount * 0.4),
+          booked_quantity: Math.floor(amount * 0.1),
+          to_sync: true,
+          amount: amount,
+          boost_quantity: amount,
+          sellable_quantity: Math.floor(amount * 1.5)
+        }
+      ]
     }
     
     this.stockBoosts.push(newBoost)
@@ -295,6 +366,20 @@ class MockApiClient {
     return {
       success: true,
       data: filteredSKUs
+    }
+  }
+
+  // Syncback methods
+  async getSyncbackInfo(): Promise<ApiResponse<SyncbackInfo>> {
+    await delay(200)
+    
+    if (!this.currentUser) {
+      throw new Error('Not authenticated')
+    }
+    
+    return {
+      success: true,
+      data: mockSyncbackInfo
     }
   }
 

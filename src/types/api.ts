@@ -17,6 +17,10 @@ export interface PaginatedResponse<T> extends ApiResponse {
   }
 }
 
+export interface SyncbackInfo {
+  [syncbackJobId: string]: string
+}
+
 export interface ValidationError {
   field: string
   message: string

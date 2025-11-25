@@ -1,3 +1,17 @@
+export interface TargetStock {
+  id: number
+  syncback_job_id: number
+  item_id: string
+  variation_id: string | null
+  sku: string
+  current_quantity: number
+  booked_quantity: number
+  to_sync: boolean
+  amount: number
+  boost_quantity: number
+  sellable_quantity: number
+}
+
 export interface StockBoost {
   id: number
   sku: string
@@ -5,6 +19,8 @@ export interface StockBoost {
   amount: number
   sourceProductId: number
   createdAt: string
+  sourceStock: number
+  targetStocks: TargetStock[]
 }
 
 export interface SKU {

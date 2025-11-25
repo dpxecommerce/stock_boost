@@ -162,6 +162,35 @@ paths:
         '401':
           $ref: '#/components/responses/Unauthorized'
 
+  /auth/syncback_info:
+    get:
+      tags:
+        - Authentication
+      summary: Get syncback information
+      description: Retrieve a dictionary mapping syncback job IDs to their names
+      responses:
+        '200':
+          description: Syncback information retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: object
+                    additionalProperties:
+                      type: string
+                    example:
+                      "101": "Shopee Malaysia Sync"
+                      "102": "Lazada Thailand Sync"
+                      "103": "Tokopedia Indonesia Sync"
+                    description: Dictionary of syncback_job_id to syncback name
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
   /boosts:
     get:
       tags:

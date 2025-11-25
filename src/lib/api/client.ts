@@ -1,6 +1,6 @@
 import { AuthResponse, User } from '@/types/auth'
 import { StockBoost, SKU, CreateBoostRequest, DeactivateBoostRequest } from '@/types/boost'
-import { ApiResponse, PaginatedResponse } from '@/types/api'
+import { ApiResponse, PaginatedResponse, SyncbackInfo } from '@/types/api'
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8000'
 const BASE_URL = `${API_BASE_URL}`
@@ -150,6 +150,11 @@ class ApiClient {
       success: false,
       error: response.error || 'Failed to search SKUs'
     }
+  }
+
+  // Syncback methods
+  async getSyncbackInfo(): Promise<ApiResponse<SyncbackInfo>> {
+    return this.request<ApiResponse<SyncbackInfo>>('/auth/syncback_info')
   }
 
   // Utility methods
