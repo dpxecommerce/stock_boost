@@ -160,6 +160,28 @@ export function useDeactivateBoost() {
   })
 }
 
+// Sync now mutation
+export function useSyncNow() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: async (id: number) => {
+      const response = await api.syncNow(id)
+      if (!response.success) {
+        throw new Error(response.error || 'Failed to sync boost')
+      }
+      return response
+    },
+    onSuccess: () => {
+      // Refetch active boosts to get updated data
+      queryClient.invalidateQueries({ queryKey: boostKeys.active() })
+    },
+    onError: (error) => {
+      console.error('Failed to sync boost:', error)
+    }
+  })
+}
+
 // Bulk operations
 export function useInvalidateBoosts() {
   const queryClient = useQueryClient()

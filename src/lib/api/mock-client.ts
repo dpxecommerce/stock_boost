@@ -1,6 +1,6 @@
 import { AuthResponse, User } from '@/types/auth'
 import { StockBoost, SKU, CreateBoostRequest, DeactivateBoostRequest } from '@/types/boost'
-import { ApiResponse, PaginatedResponse, SyncbackInfo } from '@/types/api'
+import { ApiResponse, PaginatedResponse, SyncbackInfo, SyncNowResponse } from '@/types/api'
 
 // Mock data
 const mockUsers: Record<string, { id: string; username: string; password: string; email: string; role: string }> = {
@@ -341,6 +341,43 @@ class MockApiClient {
     return {
       success: true,
       data: this.stockBoosts[boostIndex]
+    }
+  }
+
+  async syncNow(id: number): Promise<SyncNowResponse> {
+    await delay(600)
+    
+    if (!this.currentUser) {
+      throw new Error('Not authenticated')
+    }
+
+    const boostIndex = this.stockBoosts.findIndex(boost => boost.id === id)
+    
+    if (boostIndex === -1) {
+      throw new Error('Boost not found')
+    }
+    
+    // Simulate sync response - message and data at root level
+    return {
+      success: true,
+      message: `Sync initiated for boost ${id}`,
+      data: [
+        {
+          syncback_job: 'Shopee Malaysia Sync',
+          last_synced_at: new Date().toISOString(),
+          last_synced_status: 'success'
+        },
+        {
+          syncback_job: 'Lazada Thailand Sync',
+          last_synced_at: null,
+          last_synced_status: null
+        },
+        {
+          syncback_job: 'TikTok Shop Vietnam Sync',
+          last_synced_at: new Date(Date.now() - 6 * 60 * 1000).toISOString(),
+          last_synced_status: 'success'
+        }
+      ]
     }
   }
 

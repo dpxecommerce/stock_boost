@@ -1,6 +1,6 @@
 import { AuthResponse, User } from '@/types/auth'
 import { StockBoost, SKU, CreateBoostRequest, DeactivateBoostRequest } from '@/types/boost'
-import { ApiResponse, PaginatedResponse, SyncbackInfo } from '@/types/api'
+import { ApiResponse, PaginatedResponse, SyncbackInfo, SyncNowResponse } from '@/types/api'
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8000'
 const BASE_URL = `${API_BASE_URL}`
@@ -103,6 +103,12 @@ class ApiClient {
     return this.request<ApiResponse<StockBoost>>(`/boosts/${id}/deactivate`, {
       method: 'POST',
       body: JSON.stringify(request)
+    })
+  }
+
+  async syncNow(id: number): Promise<SyncNowResponse> {
+    return this.request<SyncNowResponse>(`/boosts/${id}/sync_now`, {
+      method: 'POST'
     })
   }
 

@@ -1,11 +1,13 @@
 'use client'
 
 import { useState } from 'react'
-import { useActiveBoosts, useDeactivateBoost } from '@/lib/hooks/use-boosts'
+import { useActiveBoosts, useDeactivateBoost, useSyncNow } from '@/lib/hooks/use-boosts'
 import { useSyncbackInfo, getSyncbackName } from '@/lib/hooks/use-syncback-info'
 import { StockBoost } from '@/types/boost'
+import { SyncNowResponse } from '@/types/api'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/Button'
+import Modal from '@/components/ui/Modal'
 
 interface ActiveBoostsTableProps {
   className?: string
@@ -15,8 +17,12 @@ export default function ActiveBoostsTable({ className }: ActiveBoostsTableProps)
   const { data: boosts = [], isLoading, error, refetch } = useActiveBoosts()
   const { data: syncbackInfo } = useSyncbackInfo()
   const deactivateBoostMutation = useDeactivateBoost()
+  const syncNowMutation = useSyncNow()
   const [deactivatingId, setDeactivatingId] = useState<number | null>(null)
+  const [syncingId, setSyncingId] = useState<number | null>(null)
   const [expandedRows, setExpandedRows] = useState<Set<number>>(new Set())
+  const [syncResult, setSyncResult] = useState<SyncNowResponse | null>(null)
+  const [showSyncModal, setShowSyncModal] = useState(false)
 
   const handleDeactivate = async (boost: StockBoost) => {
     if (deactivatingId) return // Prevent multiple simultaneous deactivations
@@ -33,6 +39,29 @@ export default function ActiveBoostsTable({ className }: ActiveBoostsTableProps)
     } finally {
       setDeactivatingId(null)
     }
+  }
+
+  const handleSyncNow = async (boost: StockBoost) => {
+    if (syncingId) return // Prevent multiple simultaneous syncs
+
+    try {
+      setSyncingId(boost.id)
+      const result = await syncNowMutation.mutateAsync(boost.id)
+      if (result) {
+        setSyncResult(result)
+        setShowSyncModal(true)
+      }
+    } catch (error) {
+      console.error('Failed to sync boost:', error)
+      // Error is handled by the mutation's onError callback
+    } finally {
+      setSyncingId(null)
+    }
+  }
+
+  const closeSyncModal = () => {
+    setShowSyncModal(false)
+    setSyncResult(null)
   }
 
   const toggleRow = (boostId: number) => {
@@ -101,10 +130,11 @@ export default function ActiveBoostsTable({ className }: ActiveBoostsTableProps)
   }
 
   return (
-    <div className={cn('w-full', className)}>
-      <div className="bg-white shadow-sm rounded-lg border border-gray-200 overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-gray-200">
+    <>
+      <div className={cn('w-full', className)}>
+        <div className="bg-white shadow-sm rounded-lg border border-gray-200 overflow-hidden">
+          <div className="overflow-x-auto">
+            <table className="min-w-full divide-y divide-gray-200">
             <thead className="bg-gray-50">
               <tr>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-10">
@@ -176,14 +206,24 @@ export default function ActiveBoostsTable({ className }: ActiveBoostsTableProps)
                         {formatDate(boost.createdAt)}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                        <Button
-                          variant="danger"
-                          size="sm"
-                          onClick={() => handleDeactivate(boost)}
-                          disabled={deactivatingId === boost.id || deactivateBoostMutation.isPending}
-                        >
-                          {deactivatingId === boost.id ? 'Deactivating...' : 'Deactivate'}
-                        </Button>
+                        <div className="flex items-center justify-end gap-2">
+                          <Button
+                            variant="secondary"
+                            size="sm"
+                            onClick={() => handleSyncNow(boost)}
+                            disabled={syncingId === boost.id || syncNowMutation.isPending}
+                          >
+                            {syncingId === boost.id ? 'Syncing...' : 'Sync Now'}
+                          </Button>
+                          <Button
+                            variant="danger"
+                            size="sm"
+                            onClick={() => handleDeactivate(boost)}
+                            disabled={deactivatingId === boost.id || deactivateBoostMutation.isPending}
+                          >
+                            {deactivatingId === boost.id ? 'Deactivating...' : 'Deactivate'}
+                          </Button>
+                        </div>
                       </td>
                     </tr>
                     
@@ -261,5 +301,121 @@ export default function ActiveBoostsTable({ className }: ActiveBoostsTableProps)
         </div>
       </div>
     </div>
+
+    {/* Sync Results Modal */}
+      <Modal
+        isOpen={showSyncModal}
+        onClose={closeSyncModal}
+        title="Sync Results"
+        size="lg"
+      >
+        {syncResult && (
+          <div className="space-y-4">
+            <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+              <div className="flex items-center gap-2 text-green-800 mb-2">
+                <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                </svg>
+                <span className="font-semibold">Sync Initiated Successfully</span>
+              </div>
+              <p className="text-sm text-green-700">
+                {syncResult.message}
+              </p>
+            </div>
+
+            {syncResult.data && syncResult.data.length > 0 && (
+              <div>
+                <h4 className="text-sm font-semibold text-gray-700 mb-3">
+                  Syncback Jobs ({syncResult.data.length})
+                </h4>
+                <div className="border border-gray-200 rounded-lg overflow-hidden">
+                  <div className="overflow-x-auto">
+                    <table className="min-w-full divide-y divide-gray-200">
+                      <thead className="bg-gray-100">
+                        <tr>
+                          <th className="px-4 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">
+                            Syncback Job
+                          </th>
+                          <th className="px-4 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">
+                            Last Synced At
+                          </th>
+                          <th className="px-4 py-3 text-center text-xs font-medium text-gray-600 uppercase tracking-wider">
+                            Status
+                          </th>
+                        </tr>
+                      </thead>
+                      <tbody className="bg-white divide-y divide-gray-200">
+                        {syncResult.data.map((job, index) => {
+                          const isMoreThan5MinutesAgo = job.last_synced_at && 
+                            (new Date().getTime() - new Date(job.last_synced_at).getTime()) > 5 * 60 * 1000
+                          const isNotSuccessful = job.last_synced_status !== 'success'
+                          const shouldHighlight = !job.last_synced_at || isNotSuccessful || isMoreThan5MinutesAgo
+                          
+                          return (
+                            <tr 
+                              key={index} 
+                              className={cn(
+                                "hover:bg-gray-50",
+                                shouldHighlight && "bg-red-50"
+                              )}
+                            >
+                              <td className={cn(
+                                "px-4 py-3 text-sm font-medium",
+                                shouldHighlight ? "text-red-900" : "text-gray-900"
+                              )}>
+                                {job.syncback_job}
+                              </td>
+                              <td className={cn(
+                                "px-4 py-3 text-sm",
+                                shouldHighlight ? "text-red-700" : "text-gray-600"
+                              )}>
+                                {job.last_synced_at ? (
+                                  <div className="flex flex-col">
+                                    <span>{formatDate(job.last_synced_at)}</span>
+                                    {isMoreThan5MinutesAgo && (
+                                      <span className="text-xs text-red-600 font-semibold">
+                                        ⚠ More than 5 minutes ago
+                                      </span>
+                                    )}
+                                  </div>
+                                ) : (
+                                  <span className="text-red-600 font-semibold italic">Never synced</span>
+                                )}
+                              </td>
+                              <td className="px-4 py-3 text-center">
+                                {job.last_synced_status ? (
+                                  <span className={cn(
+                                    "inline-flex px-2 py-1 text-xs font-semibold rounded-full",
+                                    job.last_synced_status === 'success' 
+                                      ? "bg-green-100 text-green-800"
+                                      : "bg-red-100 text-red-800"
+                                  )}>
+                                    {job.last_synced_status}
+                                  </span>
+                                ) : (
+                                  <span className="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-red-100 text-red-800">
+                                    pending
+                                  </span>
+                                )}
+                              </td>
+                            </tr>
+                          )
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            <div className="flex justify-end pt-4">
+              <Button onClick={closeSyncModal} variant="primary">
+                Close
+              </Button>
+            </div>
+          </div>
+        )}
+      </Modal>
+    </>
   )
 }
