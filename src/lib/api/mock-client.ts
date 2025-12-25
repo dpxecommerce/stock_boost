@@ -24,10 +24,15 @@ const mockStockBoosts: StockBoost[] = [
   {
     id: 1,
     sku: 'SKU-001',
+    allSkus: ['SKU-001-A', 'SKU-001-B'],
     amount: 55,
     status: 'active',
     sourceProductId: 1,
     createdAt: '2024-11-01T10:00:00Z',
+    createdBy: 'admin@stockboost.com',
+    expireAt: null,
+    expireBy: null,
+    expireFrom: null,
     sourceStock: 120,
     targetStocks: [
       {
@@ -60,11 +65,16 @@ const mockStockBoosts: StockBoost[] = [
   },
   {
     id: 2,
-    sku: 'SKU-002', 
+    sku: 'SKU-002',
+    allSkus: ['SKU-002'],
     amount: 38,
     status: 'active',
     sourceProductId: 2,
     createdAt: '2024-11-02T14:30:00Z',
+    createdBy: 'user@stockboost.com',
+    expireAt: null,
+    expireBy: null,
+    expireFrom: null,
     sourceStock: 85,
     targetStocks: [
       {
@@ -85,10 +95,15 @@ const mockStockBoosts: StockBoost[] = [
   {
     id: 3,
     sku: 'SKU-003',
+    allSkus: ['SKU-003'],
     amount: 2,
     status: 'completed',
     sourceProductId: 3,
     createdAt: '2024-10-30T09:15:00Z',
+    createdBy: 'system@stockboost.com',
+    expireAt: '2024-11-15T23:59:59Z',
+    expireBy: 'auto-expire',
+    expireFrom: 'system',
     sourceStock: 78,
     targetStocks: []
   }
@@ -289,10 +304,15 @@ class MockApiClient {
     const newBoost: StockBoost = {
       id: newId,
       sku,
+      allSkus: [`${sku}-TARGET`],
       amount,
       status: 'active',
       sourceProductId: newId,
       createdAt: new Date().toISOString(),
+      createdBy: this.currentUser?.email || 'unknown@stockboost.com',
+      expireAt: null,
+      expireBy: null,
+      expireFrom: null,
       sourceStock: skuData.currentStock || 0,
       targetStocks: [
         {
