@@ -7,9 +7,11 @@ import ActiveBoostsTable from '@/components/tables/ActiveBoostsTable'
 import HistoricalBoostsTable from '@/components/tables/HistoricalBoostsTable'
 import AddBoostForm from '@/components/forms/AddBoostForm'
 import { Button } from '@/components/ui/Button'
+import { Input } from '@/components/ui/Input'
 
 export default function DashboardPage() {
   const [isAddModalOpen, setIsAddModalOpen] = useState(false)
+  const [filter, setFilter] = useState('')
 
   const handleAddSuccess = () => {
     setIsAddModalOpen(false)
@@ -33,11 +35,19 @@ export default function DashboardPage() {
                 Manage your currently active stock boosts
               </p>
             </div>
-            <Button onClick={() => setIsAddModalOpen(true)}>
-              Add Boost
-            </Button>
+            <div className="flex items-center space-x-4">
+              <Input
+                placeholder="Filter by SKU or description..."
+                value={filter}
+                onChange={(e) => setFilter(e.target.value)}
+                className="w-64"
+              />
+              <Button onClick={() => setIsAddModalOpen(true)}>
+                Add Boost
+              </Button>
+            </div>
           </div>
-          <ActiveBoostsTable />
+          <ActiveBoostsTable filter={filter} />
         </div>
       )
     },
@@ -52,7 +62,7 @@ export default function DashboardPage() {
               View previously deactivated stock boosts
             </p>
           </div>
-          <HistoricalBoostsTable />
+          <HistoricalBoostsTable filter={filter} />
         </div>
       )
     }

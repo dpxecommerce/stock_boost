@@ -8,9 +8,10 @@ import { Button } from '@/components/ui/Button'
 
 interface HistoricalBoostsTableProps {
   className?: string
+  filter?: string
 }
 
-export default function HistoricalBoostsTable({ className }: HistoricalBoostsTableProps) {
+export default function HistoricalBoostsTable({ className, filter = '' }: HistoricalBoostsTableProps) {
   const [page, setPage] = useState(1)
   const limit = 20
 
@@ -18,6 +19,24 @@ export default function HistoricalBoostsTable({ className }: HistoricalBoostsTab
   
   const boosts = data?.boosts || []
   const pagination = data?.pagination
+
+  // Filter boosts based on filter prop
+  const filteredBoosts = boosts.filter((boost: StockBoost) => {
+    if (!filter.trim()) return true
+    
+    const searchTerm = filter.toLowerCase().trim()
+    
+    // Check SKU
+    if (boost.sku?.toLowerCase().includes(searchTerm)) return true
+    
+    // Check allSkus array
+    if (boost.allSkus?.some(sku => sku?.toLowerCase().includes(searchTerm))) return true
+    
+    // Check targetStocks SKUs as well
+    if (boost.targetStocks?.some(target => target.sku?.toLowerCase().includes(searchTerm))) return true
+    
+    return false
+  })
 
   const formatDate = (date: string) => {
     return new Intl.DateTimeFormat('en-US', {
@@ -59,7 +78,22 @@ export default function HistoricalBoostsTable({ className }: HistoricalBoostsTab
     )
   }
 
-  if (boosts.length === 0) {
+  if (filteredBoosts.length === 0) {
+    if (filter.trim() && boosts.length > 0) {
+      return (
+        <div className={cn('w-full', className)}>
+          <div className="text-center py-8">
+            <div className="text-gray-500 mb-4">
+              No historical boosts match your filter
+            </div>
+            <p className="text-sm text-gray-400">
+              Try a different search term or clear the filter
+            </p>
+          </div>
+        </div>
+      )
+    }
+    
     return (
       <div className={cn('w-full', className)}>
         <div className="text-center py-8">
@@ -93,10 +127,22 @@ export default function HistoricalBoostsTable({ className }: HistoricalBoostsTab
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Created
                 </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Created By
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Expire At
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Expire By
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Expire From
+                </th>
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
-              {boosts.map((boost: StockBoost) => (
+              {filteredBoosts.map((boost: StockBoost) => (
                 <tr key={boost.id} className="hover:bg-gray-50">
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="text-sm font-medium text-gray-900">
@@ -115,6 +161,18 @@ export default function HistoricalBoostsTable({ className }: HistoricalBoostsTab
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                     {formatDate(boost.createdAt)}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                    {boost.createdBy || '-'}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                    {boost.expireAt ? formatDate(boost.expireAt) : '-'}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                    {boost.expireBy || '-'}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                    {boost.expireFrom || '-'}
                   </td>
                 </tr>
               ))}

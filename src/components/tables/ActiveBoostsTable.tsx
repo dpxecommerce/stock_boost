@@ -11,9 +11,10 @@ import Modal from '@/components/ui/Modal'
 
 interface ActiveBoostsTableProps {
   className?: string
+  filter?: string
 }
 
-export default function ActiveBoostsTable({ className }: ActiveBoostsTableProps) {
+export default function ActiveBoostsTable({ className, filter = '' }: ActiveBoostsTableProps) {
   const { data: boosts = [], isLoading, error, refetch } = useActiveBoosts()
   const { data: syncbackInfo } = useSyncbackInfo()
   const deactivateBoostMutation = useDeactivateBoost()
@@ -23,6 +24,26 @@ export default function ActiveBoostsTable({ className }: ActiveBoostsTableProps)
   const [expandedRows, setExpandedRows] = useState<Set<number>>(new Set())
   const [syncResult, setSyncResult] = useState<SyncNowResponse | null>(null)
   const [showSyncModal, setShowSyncModal] = useState(false)
+
+  // Filter boosts based on filter prop
+  const filteredBoosts = boosts.filter((boost: StockBoost) => {
+    if (!filter.trim()) return true
+    
+    const searchTerm = filter.toLowerCase().trim()
+    
+    // Check SKU
+    if (boost.sku?.toLowerCase().includes(searchTerm)) return true
+    
+    // Check allSkus array
+    if (boost.allSkus?.some(sku => sku?.toLowerCase().includes(searchTerm))) return true
+    
+    // Check if there's a description field in targetStocks or other fields
+    // Note: Based on the StockBoost interface, there doesn't seem to be a description field,
+    // but we can check targetStocks SKUs as well
+    if (boost.targetStocks?.some(target => target.sku?.toLowerCase().includes(searchTerm))) return true
+    
+    return false
+  })
 
   const handleDeactivate = async (boost: StockBoost) => {
     if (deactivatingId) return // Prevent multiple simultaneous deactivations
@@ -114,7 +135,22 @@ export default function ActiveBoostsTable({ className }: ActiveBoostsTableProps)
     )
   }
 
-  if (boosts.length === 0) {
+  if (filteredBoosts.length === 0) {
+    if (filter.trim() && boosts.length > 0) {
+      return (
+        <div className={cn('w-full', className)}>
+          <div className="text-center py-8">
+            <div className="text-gray-500 mb-4">
+              No boosts match your filter
+            </div>
+            <p className="text-sm text-gray-400">
+              Try a different search term or clear the filter
+            </p>
+          </div>
+        </div>
+      )
+    }
+    
     return (
       <div className={cn('w-full', className)}>
         <div className="text-center py-8">
@@ -135,174 +171,183 @@ export default function ActiveBoostsTable({ className }: ActiveBoostsTableProps)
         <div className="bg-white shadow-sm rounded-lg border border-gray-200 overflow-hidden">
           <div className="overflow-x-auto">
             <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-gray-50">
-              <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-10">
-                  {/* Expand column */}
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  SKU
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Source Stock
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Boost Amount
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Status
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Created
-                </th>
-                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Actions
-                </th>
-              </tr>
-            </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
-              {boosts.map((boost: StockBoost) => {
-                const isExpanded = expandedRows.has(boost.id)
-                const hasTargets = boost.targetStocks && boost.targetStocks.length > 0
-                
-                return (
-                  <>
-                    {/* Main row */}
-                    <tr key={boost.id} className="hover:bg-gray-50">
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        {hasTargets && (
-                          <button
-                            onClick={() => toggleRow(boost.id)}
-                            className="text-gray-500 hover:text-gray-700 transition-transform duration-200"
-                            style={{ transform: isExpanded ? 'rotate(90deg)' : 'rotate(0deg)' }}
-                          >
-                            <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                              <path fillRule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clipRule="evenodd" />
-                            </svg>
-                          </button>
-                        )}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm font-medium text-gray-900">
-                          {boost.sku}
-                        </div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm text-gray-900">
-                          {boost.sourceStock !== undefined ? formatQuantity(boost.sourceStock) : '-'}
-                        </div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm text-gray-900">
-                          {formatQuantity(boost.amount)}
-                        </div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <span className="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">
-                          {boost.status}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                        {formatDate(boost.createdAt)}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                        <div className="flex items-center justify-end gap-2">
-                          <Button
-                            variant="secondary"
-                            size="sm"
-                            onClick={() => handleSyncNow(boost)}
-                            disabled={syncingId === boost.id || syncNowMutation.isPending}
-                          >
-                            {syncingId === boost.id ? 'Syncing...' : 'Sync Now'}
-                          </Button>
-                          <Button
-                            variant="danger"
-                            size="sm"
-                            onClick={() => handleDeactivate(boost)}
-                            disabled={deactivatingId === boost.id || deactivateBoostMutation.isPending}
-                          >
-                            {deactivatingId === boost.id ? 'Deactivating...' : 'Deactivate'}
-                          </Button>
-                        </div>
-                      </td>
-                    </tr>
-                    
-                    {/* Expanded target stocks sub-rows */}
-                    {isExpanded && hasTargets && (
-                      <tr className="bg-gray-50">
-                        <td colSpan={7} className="px-6 py-4">
-                          <div className="ml-8">
-                            <h4 className="text-sm font-semibold text-gray-700 mb-3">
-                              Target Stocks ({boost.targetStocks.length})
-                            </h4>
-                            <div className="overflow-x-auto">
-                              <table className="min-w-full divide-y divide-gray-300 border border-gray-300 rounded-md">
-                                <thead className="bg-gray-100">
-                                  <tr>
-                                    <th className="px-4 py-2 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">
-                                      Syncback
-                                    </th>
-                                    <th className="px-4 py-2 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">
-                                      Item ID
-                                    </th>
-                                    <th className="px-4 py-2 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">
-                                      Variation ID
-                                    </th>
-                                    <th className="px-4 py-2 text-right text-xs font-medium text-gray-600 uppercase tracking-wider">
-                                      Booked Qty
-                                    </th>
-                                    <th className="px-4 py-2 text-right text-xs font-medium text-gray-600 uppercase tracking-wider">
-                                      Sellable Qty
-                                    </th>
-                                  </tr>
-                                </thead>
-                                <tbody className="bg-white divide-y divide-gray-200">
-                                  {boost.targetStocks.map((target) => (
-                                    <tr key={target.id} className="hover:bg-gray-50">
-                                      <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-900">
-                                        <div className="flex flex-col">
-                                          <span className="font-medium">{getSyncbackName(syncbackInfo, target.syncback_job_id)}</span>
-                                          <span className="text-xs text-gray-500">ID: {target.syncback_job_id}</span>
-                                        </div>
-                                      </td>
-                                      <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-900">
-                                        {target.item_id}
-                                      </td>
-                                      <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-900">
-                                        {target.variation_id || '-'}
-                                      </td>
-                                      <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-900 text-right">
-                                        {formatQuantity(target.booked_quantity)}
-                                      </td>
-                                      <td className="px-4 py-2 whitespace-nowrap text-sm text-green-600 font-semibold text-right">
-                                        {formatQuantity(target.sellable_quantity)}
-                                      </td>
-                                    </tr>
-                                  ))}
-                                </tbody>
-                              </table>
+              <thead className="bg-gray-50">
+                <tr>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-10">
+                    {/* Expand column */}
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    SKU
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Source Stock
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Boost Amount
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Status
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Created
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Created By
+                  </th>
+                  <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Actions
+                  </th>
+                </tr>
+              </thead>
+              <tbody className="bg-white divide-y divide-gray-200">
+                {filteredBoosts.map((boost: StockBoost) => {
+                  const isExpanded = expandedRows.has(boost.id)
+                  const hasTargets = boost.targetStocks && boost.targetStocks.length > 0
+
+                  return (
+                    <>
+                      {/* Main row */}
+                      <tr key={boost.id} className="hover:bg-gray-50">
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          {hasTargets && (
+                            <button
+                              onClick={() => toggleRow(boost.id)}
+                              className="text-gray-500 hover:text-gray-700 transition-transform duration-200"
+                              style={{ transform: isExpanded ? 'rotate(90deg)' : 'rotate(0deg)' }}
+                            >
+                              <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                                <path fillRule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clipRule="evenodd" />
+                              </svg>
+                            </button>
+                          )}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div className="text-sm font-medium text-gray-900">
+                            {boost.sku}
+                            <div className="text-xs text-gray-500 mt-1">
+                              {boost.allSkus}
                             </div>
                           </div>
                         </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div className="text-sm text-gray-900">
+                            {boost.sourceStock !== undefined ? formatQuantity(boost.sourceStock) : '-'}
+                          </div>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div className="text-sm text-gray-900">
+                            {formatQuantity(boost.amount)}
+                          </div>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <span className="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">
+                            {boost.status}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                          {formatDate(boost.createdAt)}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                          {boost.createdBy || '-'}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                          <div className="flex items-center justify-end gap-2">
+                            <Button
+                              variant="secondary"
+                              size="sm"
+                              onClick={() => handleSyncNow(boost)}
+                              disabled={syncingId === boost.id || syncNowMutation.isPending}
+                            >
+                              {syncingId === boost.id ? 'Syncing...' : 'Sync Now'}
+                            </Button>
+                            <Button
+                              variant="danger"
+                              size="sm"
+                              onClick={() => handleDeactivate(boost)}
+                              disabled={deactivatingId === boost.id || deactivateBoostMutation.isPending}
+                            >
+                              {deactivatingId === boost.id ? 'Deactivating...' : 'Deactivate'}
+                            </Button>
+                          </div>
+                        </td>
                       </tr>
-                    )}
-                  </>
-                )
-              })}
-            </tbody>
-          </table>
-        </div>
 
-        {/* Footer with summary */}
-        <div className="bg-gray-50 px-6 py-3 border-t border-gray-200">
-          <div className="text-sm text-gray-600">
-            Total active boosts: {boosts.length}
+                      {/* Expanded target stocks sub-rows */}
+                      {isExpanded && hasTargets && (
+                        <tr className="bg-gray-50">
+                          <td colSpan={8} className="px-6 py-4">
+                            <div className="ml-8">
+                              <h4 className="text-sm font-semibold text-gray-700 mb-3">
+                                Target Stocks ({boost.targetStocks.length})
+                              </h4>
+                              <div className="overflow-x-auto">
+                                <table className="min-w-full divide-y divide-gray-300 border border-gray-300 rounded-md">
+                                  <thead className="bg-gray-100">
+                                    <tr>
+                                      <th className="px-4 py-2 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">
+                                        Syncback
+                                      </th>
+                                      <th className="px-4 py-2 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">
+                                        Item ID
+                                      </th>
+                                      <th className="px-4 py-2 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">
+                                        Variation ID
+                                      </th>
+                                      <th className="px-4 py-2 text-right text-xs font-medium text-gray-600 uppercase tracking-wider">
+                                        Booked Qty
+                                      </th>
+                                      <th className="px-4 py-2 text-right text-xs font-medium text-gray-600 uppercase tracking-wider">
+                                        Sellable Qty
+                                      </th>
+                                    </tr>
+                                  </thead>
+                                  <tbody className="bg-white divide-y divide-gray-200">
+                                    {boost.targetStocks.map((target) => (
+                                      <tr key={target.id} className="hover:bg-gray-50">
+                                        <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-900">
+                                          <div className="flex flex-col">
+                                            <span className="font-medium">{getSyncbackName(syncbackInfo, target.syncback_job_id)}</span>
+                                            <span className="text-xs text-gray-500">ID: {target.syncback_job_id}</span>
+                                          </div>
+                                        </td>
+                                        <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-900">
+                                          {target.item_id}
+                                        </td>
+                                        <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-900">
+                                          {target.variation_id || '-'}
+                                        </td>
+                                        <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-900 text-right">
+                                          {formatQuantity(target.booked_quantity)}
+                                        </td>
+                                        <td className="px-4 py-2 whitespace-nowrap text-sm text-green-600 font-semibold text-right">
+                                          {formatQuantity(target.sellable_quantity)}
+                                        </td>
+                                      </tr>
+                                    ))}
+                                  </tbody>
+                                </table>
+                              </div>
+                            </div>
+                          </td>
+                        </tr>
+                      )}
+                    </>
+                  )
+                })}
+              </tbody>
+            </table>
+          </div>
+
+          {/* Footer with summary */}
+          <div className="bg-gray-50 px-6 py-3 border-t border-gray-200">
+            <div className="text-sm text-gray-600">
+              Total active boosts: {boosts.length}
+            </div>
           </div>
         </div>
       </div>
-    </div>
 
-    {/* Sync Results Modal */}
+      {/* Sync Results Modal */}
       <Modal
         isOpen={showSyncModal}
         onClose={closeSyncModal}
@@ -346,14 +391,14 @@ export default function ActiveBoostsTable({ className }: ActiveBoostsTableProps)
                       </thead>
                       <tbody className="bg-white divide-y divide-gray-200">
                         {syncResult.data.map((job, index) => {
-                          const isMoreThan5MinutesAgo = job.last_synced_at && 
+                          const isMoreThan5MinutesAgo = job.last_synced_at &&
                             (new Date().getTime() - new Date(job.last_synced_at).getTime()) > 5 * 60 * 1000
                           const isNotSuccessful = job.last_synced_status !== 'success'
                           const shouldHighlight = !job.last_synced_at || isNotSuccessful || isMoreThan5MinutesAgo
-                          
+
                           return (
-                            <tr 
-                              key={index} 
+                            <tr
+                              key={index}
                               className={cn(
                                 "hover:bg-gray-50",
                                 shouldHighlight && "bg-red-50"
@@ -386,7 +431,7 @@ export default function ActiveBoostsTable({ className }: ActiveBoostsTableProps)
                                 {job.last_synced_status ? (
                                   <span className={cn(
                                     "inline-flex px-2 py-1 text-xs font-semibold rounded-full",
-                                    job.last_synced_status === 'success' 
+                                    job.last_synced_status === 'success'
                                       ? "bg-green-100 text-green-800"
                                       : "bg-red-100 text-red-800"
                                   )}>

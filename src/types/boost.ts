@@ -15,10 +15,15 @@ export interface TargetStock {
 export interface StockBoost {
   id: number
   sku: string
+  allSkus: string[] | null
   status: 'active' | 'inactive' | 'completed'
   amount: number
   sourceProductId: number
   createdAt: string
+  createdBy: string | null
+  expireAt: string | null
+  expireBy: string | null
+  expireFrom: string | null
   sourceStock: number
   targetStocks: TargetStock[]
 }
