@@ -426,6 +426,30 @@ class MockApiClient {
     }
   }
 
+  async skuDetails(skus: string[]): Promise<ApiResponse<SKU[]>> {
+    await delay(200)
+    
+    if (!this.currentUser) {
+      throw new Error('Not authenticated')
+    }
+    
+    if (!skus || skus.length === 0) {
+      return {
+        success: true,
+        data: []
+      }
+    }
+    
+    const filteredSKUs = mockSKUs.filter(sku => 
+      skus.includes(sku.sku) || (sku.id && skus.includes(sku.id))
+    )
+    
+    return {
+      success: true,
+      data: filteredSKUs
+    }
+  }
+
   // Syncback methods
   async getSyncbackInfo(): Promise<ApiResponse<SyncbackInfo>> {
     await delay(200)
