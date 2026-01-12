@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { api } from '@/lib/api/factory'
 import { StockBoost, CreateBoostRequest, DeactivateBoostRequest } from '@/types/boost'
+import { useSkuDescription } from '@/contexts/SkuDescriptionContext'
 
 // Query keys for caching
 export const boostKeys = {
@@ -14,6 +15,7 @@ export const boostKeys = {
 export const skuKeys = {
   all: ['skus'] as const,
   search: (query: string, limit: number) => [...skuKeys.all, 'search', query, limit] as const,
+  details: (skus: string[]) => [...skuKeys.all, 'details', ...skus] as const,
 }
 
 // Active boosts query
@@ -59,6 +61,8 @@ export function useHistoricalBoosts(page = 1, limit = 20) {
 
 // SKU search query
 export function useSkuSearch(query: string, limit = 10) {
+  const { addDescriptions } = useSkuDescription()
+  
   return useQuery({
     queryKey: skuKeys.search(query, limit),
     queryFn: async () => {
@@ -70,11 +74,48 @@ export function useSkuSearch(query: string, limit = 10) {
         throw new Error(response.error || 'Failed to search SKUs')
       }
       // Handle both array response and object with data property
-      return Array.isArray(response.data) ? response.data : []
+      const skus = Array.isArray(response.data) ? response.data : []
+      
+      // Add SKU descriptions to cache
+      if (skus.length > 0) {
+        addDescriptions(skus)
+      }
+      
+      return skus
     },
     enabled: query.trim().length > 0,
     staleTime: 30 * 1000, // 30 seconds (search results can be cached briefly)
     gcTime: 2 * 60 * 1000, // 2 minutes
+  })
+}
+
+// SKU details query
+export function useSkuDetails(skus: string[]) {
+  const { addDescriptions } = useSkuDescription()
+  
+  return useQuery({
+    queryKey: skuKeys.details(skus),
+    queryFn: async () => {
+      if (skus.length === 0) {
+        return []
+      }
+      const response = await api.skuDetails(skus)
+      if (!response.success) {
+        throw new Error(response.error || 'Failed to fetch SKU details')
+      }
+      // Handle both array response and object with data property
+      const skuData = Array.isArray(response.data) ? response.data : []
+      
+      // Add SKU descriptions to cache
+      if (skuData.length > 0) {
+        addDescriptions(skuData)
+      }
+      
+      return skuData
+    },
+    enabled: skus.length > 0,
+    staleTime: 5 * 60 * 1000, // 5 minutes
+    gcTime: 10 * 60 * 1000, // 10 minutes
   })
 }
 

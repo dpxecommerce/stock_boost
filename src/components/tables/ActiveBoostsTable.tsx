@@ -1,8 +1,9 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useActiveBoosts, useDeactivateBoost, useSyncNow } from '@/lib/hooks/use-boosts'
 import { useSyncbackInfo, getSyncbackName } from '@/lib/hooks/use-syncback-info'
+import { useSkuDescription } from '@/contexts/SkuDescriptionContext'
 import { StockBoost } from '@/types/boost'
 import { SyncNowResponse } from '@/types/api'
 import { cn } from '@/lib/utils'
@@ -12,6 +13,26 @@ import Modal from '@/components/ui/Modal'
 interface ActiveBoostsTableProps {
   className?: string
   filter?: string
+}
+
+function SkuCell({ sku }: { sku: string }) {
+  const { getDetail } = useSkuDescription()
+  const [description, setDescription] = useState<string | null>(null)
+
+  useEffect(() => {
+    getDetail(sku).then(setDescription)
+  }, [sku, getDetail])
+
+  return (
+    <div className="text-sm font-medium text-gray-900">
+      {sku}
+      {description && (
+        <div className="text-xs text-gray-500 mt-1">
+          {description}
+        </div>
+      )}
+    </div>
+  )
 }
 
 export default function ActiveBoostsTable({ className, filter = '' }: ActiveBoostsTableProps) {
@@ -222,12 +243,12 @@ export default function ActiveBoostsTable({ className, filter = '' }: ActiveBoos
                           )}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="text-sm font-medium text-gray-900">
-                            {boost.sku}
+                          <SkuCell sku={boost.sku} />
+                          {boost.allSkus && (
                             <div className="text-xs text-gray-500 mt-1">
                               {boost.allSkus}
                             </div>
-                          </div>
+                          )}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
                           <div className="text-sm text-gray-900">

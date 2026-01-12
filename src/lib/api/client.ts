@@ -158,6 +158,50 @@ class ApiClient {
     }
   }
 
+  // SKU methods
+  async skuDetails(skus: string[]): Promise<ApiResponse<SKU[]>> {
+    const response = await this.request<ApiResponse<Array<{
+      id: string
+      item_no: string
+      item_no2: string
+      description: string
+      client?: string
+      row_id?: number
+      current_stock?: number
+      stock_last_updated_at?: string
+    }>>>(`/skus/details`, {
+      method: 'POST',
+      body: JSON.stringify({ skus })
+    })
+    
+    // Transform the API response to SKU format
+    if (response.success && response.data) {
+      const transformedData: SKU[] = response.data.map(item => ({
+        id: item.id,
+        sku: item.item_no,
+        name: item.description,
+        category: 'Products',
+        currentStock: item.current_stock || 0,
+        isActive: true,
+        lastUsed: null,
+        // Additional fields
+        itemNo2: item.item_no2,
+        client: item.client,
+        stockLastUpdatedAt: item.stock_last_updated_at
+      }))
+      
+      return {
+        success: true,
+        data: transformedData
+      }
+    }
+    
+    return {
+      success: false,
+      error: response.error || 'Failed to search SKUs'
+    }
+  }
+
   // Syncback methods
   async getSyncbackInfo(): Promise<ApiResponse<SyncbackInfo>> {
     return this.request<ApiResponse<SyncbackInfo>>('/auth/syncback_info')
