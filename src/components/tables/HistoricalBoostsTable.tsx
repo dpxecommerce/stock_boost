@@ -1,7 +1,8 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useHistoricalBoosts } from '@/lib/hooks/use-boosts'
+import { useSkuDescription } from '@/contexts/SkuDescriptionContext'
 import { StockBoost } from '@/types/boost'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/Button'
@@ -9,6 +10,26 @@ import { Button } from '@/components/ui/Button'
 interface HistoricalBoostsTableProps {
   className?: string
   filter?: string
+}
+
+function SkuCell({ sku }: { sku: string }) {
+  const { getDetail } = useSkuDescription()
+  const [description, setDescription] = useState<string | null>(null)
+
+  useEffect(() => {
+    getDetail(sku).then(setDescription)
+  }, [sku, getDetail])
+
+  return (
+    <div className="text-sm font-medium text-gray-900">
+      {sku}
+      {description && (
+        <div className="text-xs text-gray-500 mt-1">
+          {description}
+        </div>
+      )}
+    </div>
+  )
 }
 
 export default function HistoricalBoostsTable({ className, filter = '' }: HistoricalBoostsTableProps) {
@@ -145,9 +166,7 @@ export default function HistoricalBoostsTable({ className, filter = '' }: Histor
               {filteredBoosts.map((boost: StockBoost) => (
                 <tr key={boost.id} className="hover:bg-gray-50">
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm font-medium text-gray-900">
-                      {boost.sku}
-                    </div>
+                    <SkuCell sku={boost.sku} />
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="text-sm text-gray-900">
