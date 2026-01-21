@@ -38,6 +38,7 @@ function SkuCell({ sku }: { sku: string }) {
 export default function ActiveBoostsTable({ className, filter = '' }: ActiveBoostsTableProps) {
   const { data: boosts = [], isLoading, error, refetch } = useActiveBoosts()
   const { data: syncbackInfo } = useSyncbackInfo()
+  const { getDetail } = useSkuDescription()
   const deactivateBoostMutation = useDeactivateBoost()
   const syncNowMutation = useSyncNow()
   const [deactivatingId, setDeactivatingId] = useState<number | null>(null)
@@ -45,6 +46,50 @@ export default function ActiveBoostsTable({ className, filter = '' }: ActiveBoos
   const [expandedRows, setExpandedRows] = useState<Set<number>>(new Set())
   const [syncResult, setSyncResult] = useState<SyncNowResponse | null>(null)
   const [showSyncModal, setShowSyncModal] = useState(false)
+  const [skuDescriptions, setSkuDescriptions] = useState<Record<string, string>>({})
+
+  // Fetch descriptions for all SKUs when boosts change
+  useEffect(() => {
+    const fetchDescriptions = async () => {
+      if (!boosts || boosts.length === 0) return
+
+      const allSkus = new Set<string>()
+      
+      // Collect all unique SKUs
+      boosts.forEach((boost: StockBoost) => {
+        if (boost.sku) allSkus.add(boost.sku)
+        if (boost.allSkus) {
+          boost.allSkus.forEach(sku => {
+            if (sku) allSkus.add(sku)
+          })
+        }
+        if (boost.targetStocks) {
+          boost.targetStocks.forEach(target => {
+            if (target.sku) allSkus.add(target.sku)
+          })
+        }
+      })
+
+      // Fetch descriptions for all SKUs
+      const descriptions: Record<string, string> = {}
+      await Promise.all(
+        Array.from(allSkus).map(async (sku) => {
+          try {
+            const description = await getDetail(sku)
+            if (description) {
+              descriptions[sku] = description
+            }
+          } catch (error) {
+            console.warn(`Failed to fetch description for SKU ${sku}:`, error)
+          }
+        })
+      )
+
+      setSkuDescriptions(descriptions)
+    }
+
+    fetchDescriptions()
+  }, [boosts, getDetail])
 
   // Filter boosts based on filter prop
   const filteredBoosts = boosts.filter((boost: StockBoost) => {
@@ -55,13 +100,24 @@ export default function ActiveBoostsTable({ className, filter = '' }: ActiveBoos
     // Check SKU
     if (boost.sku?.toLowerCase().includes(searchTerm)) return true
     
+    // Check SKU description
+    if (boost.sku && skuDescriptions[boost.sku]?.toLowerCase().includes(searchTerm)) return true
+    
     // Check allSkus array
     if (boost.allSkus?.some(sku => sku?.toLowerCase().includes(searchTerm))) return true
     
-    // Check if there's a description field in targetStocks or other fields
-    // Note: Based on the StockBoost interface, there doesn't seem to be a description field,
-    // but we can check targetStocks SKUs as well
+    // Check allSkus descriptions
+    if (boost.allSkus?.some(sku => 
+      sku && skuDescriptions[sku]?.toLowerCase().includes(searchTerm)
+    )) return true
+    
+    // Check targetStocks SKUs
     if (boost.targetStocks?.some(target => target.sku?.toLowerCase().includes(searchTerm))) return true
+    
+    // Check targetStocks SKU descriptions
+    if (boost.targetStocks?.some(target => 
+      target.sku && skuDescriptions[target.sku]?.toLowerCase().includes(searchTerm)
+    )) return true
     
     return false
   })
