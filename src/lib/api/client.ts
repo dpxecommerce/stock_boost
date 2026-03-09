@@ -80,7 +80,8 @@ class ApiClient {
 
   // Stock boost methods
   async getActiveBoosts(): Promise<ApiResponse<StockBoost[]>> {
-    const response = await this.request<{ success: boolean; data: { boosts: StockBoost[] } }>('/boosts/active')
+    // Fetch all active boosts using maximum allowed limit
+    const response = await this.request<{ success: boolean; data: { boosts: StockBoost[] } }>('/boosts/active?limit=100')
     // Transform response to match expected format
     return {
       success: response.success,

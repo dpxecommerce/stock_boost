@@ -12,6 +12,7 @@ import { Input } from '@/components/ui/Input'
 export default function DashboardPage() {
   const [isAddModalOpen, setIsAddModalOpen] = useState(false)
   const [filter, setFilter] = useState('')
+  const [historicalFilter, setHistoricalFilter] = useState('')
 
   const handleAddSuccess = () => {
     setIsAddModalOpen(false)
@@ -56,13 +57,23 @@ export default function DashboardPage() {
       label: 'Historical Boosts',
       content: (
         <div className="space-y-4">
-          <div>
-            <h3 className="text-lg font-medium text-gray-900">Historical Stock Boosts</h3>
-            <p className="text-sm text-gray-500">
-              View previously deactivated stock boosts
-            </p>
+          <div className="flex justify-between items-center">
+            <div>
+              <h3 className="text-lg font-medium text-gray-900">Historical Stock Boosts</h3>
+              <p className="text-sm text-gray-500">
+                View previously deactivated stock boosts
+              </p>
+            </div>
+            <div className="flex items-center">
+              <Input
+                placeholder="Filter by SKU or description..."
+                value={historicalFilter}
+                onChange={(e) => setHistoricalFilter(e.target.value)}
+                className="w-64"
+              />
+            </div>
           </div>
-          <HistoricalBoostsTable filter={filter} />
+          <HistoricalBoostsTable filter={historicalFilter} />
         </div>
       )
     }
